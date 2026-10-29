@@ -153,16 +153,18 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
 }
 
 mavenPublishing {
+    // Group/artifact also come from gradle.properties (GROUP / POM_ARTIFACT_ID);
+    // this sets the version from the single source of truth and is explicit.
     coordinates(
         groupId = "com.meshpay",
         artifactId = "link",
         version = libs.versions.meshpay.link.get(),
     )
-    publishToMavenCentral()
-    // Signing is enabled in release workflows via SIGNING_KEY / SIGNING_PASSWORD.
-    if (providers.gradleProperty("RELEASE_SIGNING_ENABLED").getOrElse("false") == "true") {
-        signAllPublications()
-    }
+    // The Central Portal host and in-memory signing are configured from
+    // gradle.properties (SONATYPE_HOST=CENTRAL_PORTAL, RELEASE_SIGNING_ENABLED=true),
+    // which creates the `publishAndReleaseToMavenCentral` task. Calling
+    // publishToMavenCentral() here as well would set the already-finalized host a
+    // second time and fail configuration.
 }
 
 detekt {
