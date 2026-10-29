@@ -1,0 +1,443 @@
+package com.meshpay.link.internal
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.graphics.Color
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
+import android.view.View
+import android.webkit.ConsoleMessage
+import android.webkit.RenderProcessGoneDetail
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.FrameLayout
+import android.widget.ImageButton
+import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
+import androidx.webkit.JavaScriptReplyProxy
+import androidx.webkit.WebMessageCompat
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
+import com.meshpay.link.BuildConfig
+import com.meshpay.link.LinkConfiguration
+import com.meshpay.link.LinkError
+import com.meshpay.link.LinkErrorCode
+import com.meshpay.link.LinkExitStatus
+import com.meshpay.link.LinkResult
+
+/**
+ * Hosts the Link WebView full screen and runs the session lifecycle (§2.3, §5.3).
+ * Not launched directly: [com.meshpay.link.LinkContract] creates its Intent, and
+ * the Activity Result API delivers [LinkResult] exactly once.
+ */
+internal class LinkActivity : ComponentActivity() {
+
+    private lateinit var config: LinkConfiguration
+    private lateinit var built: BuiltLinkUrl
+    private lateinit var launcher: ExternalLauncher
+
+    private lateinit var root: FrameLayout
+    private var webView: WebView? = null
+    private lateinit var closeButton: ImageButton
+
+    private val main = Handler(Looper.getMainLooper())
+    private val loadTimeout = Runnable {
+        finishWith(LinkResult.Error(LinkError(LinkErrorCode.LOAD_TIMEOUT, "Link did not load in time.")))
+    }
+    private val graceTimeout = Runnable { finishWith(LinkResult.Exit(LinkExitStatus.CANCELED)) }
+    private val revealCloseButton = Runnable { closeButton.visibility = View.VISIBLE }
+
+    private var done = false
+    private var closing = false
+    private var loaded = false
+    private var navigationFailed = false
+
+    private val closeRequester = { requestClose() }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // A recreation with saved state means process death (config changes are
+        // handled in the manifest, so they never land here). The token is
+        // single-use, so the session cannot be resumed: report it and stop.
+        if (savedInstanceState != null) {
+            deliverResult(
+                LinkResult.Error(
+                    LinkError(LinkErrorCode.SESSION_INTERRUPTED, "The session could not be resumed."),
+                ),
+            )
+            done = true
+            finish()
+            return
+        }
+
+        val incoming = intentConfig(intent)
+        if (incoming == null) {
+            deliverResult(LinkResult.Error(LinkError(LinkErrorCode.LOAD_ERROR, "Missing configuration.")))
+            done = true
+            finish()
+            return
+        }
+        config = incoming
+        launcher = ExternalLauncher(this)
+
+        built = buildLinkUrl(config.token, config.clientId, config.options, isSystemDark())
+        val dark = isDark(config)
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !dark
+
+        root = FrameLayout(this).apply {
+            setBackgroundColor(if (dark) BACKGROUND_DARK else BACKGROUND_LIGHT)
+        }
+        setContentView(root)
+        addWebView()
+        addCloseButton(dark)
+        applyInsets()
+
+        ActiveSession.register(closeRequester)
+        onBackPressedDispatcher.addCallback(this, backCallback)
+
+        startLoadGuards()
+        webView?.loadUrl(built.href)
+    }
+
+    // --- View construction ---------------------------------------------------
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun addWebView() {
+        val view = WebView(this)
+        webView = view
+        view.setBackgroundColor(Color.TRANSPARENT)
+        view.webViewClient = linkWebViewClient
+        view.webChromeClient = linkChromeClient
+        view.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            allowFileAccess = false
+            allowContentAccess = false
+            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            javaScriptCanOpenWindowsAutomatically = true
+            setSupportMultipleWindows(true)
+        }
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
+            androidx.webkit.WebSettingsCompat.setSafeBrowsingEnabled(view.settings, true)
+        }
+        // Remote debugging only in a debuggable host app.
+        val debuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        WebView.setWebContentsDebuggingEnabled(debuggable)
+
+        installBridge(view)
+        installDocumentStartScript(view)
+
+        root.addView(
+            view,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+    }
+
+    private fun addCloseButton(dark: Boolean) {
+        closeButton = ImageButton(this).apply {
+            setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+            setColorFilter(if (dark) BACKGROUND_LIGHT else BACKGROUND_DARK)
+            background = null
+            contentDescription = getString(android.R.string.cancel)
+            visibility = View.GONE
+            setOnClickListener { requestClose() }
+        }
+        root.addView(
+            closeButton,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP or Gravity.START,
+            ),
+        )
+    }
+
+    private fun applyInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            webView?.updateLayoutParams<FrameLayout.LayoutParams> {
+                topMargin = bars.top
+                bottomMargin = bars.bottom
+                leftMargin = bars.left
+                rightMargin = bars.right
+            }
+            closeButton.updateLayoutParams<FrameLayout.LayoutParams> {
+                topMargin = bars.top
+                leftMargin = bars.left
+            }
+            insets
+        }
+    }
+
+    // --- Bridge --------------------------------------------------------------
+
+    private fun installBridge(view: WebView) {
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            // The WebView restricts the channel to the Link origin and reports the
+            // sending frame, so no extra origin/frame check is needed here.
+            WebViewCompat.addWebMessageListener(
+                view,
+                "JSBridge",
+                setOf(built.origin),
+                object : WebViewCompat.WebMessageListener {
+                    override fun onPostMessage(
+                        webView: WebView,
+                        message: WebMessageCompat,
+                        sourceOrigin: android.net.Uri,
+                        isMainFrame: Boolean,
+                        replyProxy: JavaScriptReplyProxy,
+                    ) {
+                        if (isMainFrame) onBridgeMessage(message.data)
+                    }
+                },
+            )
+        } else {
+            view.addJavascriptInterface(LegacyJsBridge(), "JSBridge")
+        }
+    }
+
+    /** Fallback bridge for old WebViews. Visible to every frame, so the current
+     *  main-frame URL origin is checked before a message is processed (§5.3, §5.5). */
+    private inner class LegacyJsBridge {
+        @android.webkit.JavascriptInterface
+        fun sendNativeMessage(json: String?) {
+            main.post {
+                val origin = webView?.url?.let { getOrigin(it) }
+                if (origin == built.origin) onBridgeMessage(json)
+            }
+        }
+    }
+
+    private fun installDocumentStartScript(view: WebView) {
+        val script = buildDocumentStartScript(BuildConfig.SDK_VERSION)
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            WebViewCompat.addDocumentStartJavaScript(view, script, setOf(built.origin))
+        }
+        // Otherwise the globals are injected on Link's `loaded` message, below.
+    }
+
+    private fun onBridgeMessage(json: String?) {
+        when (val message = parseLinkMessage(json)) {
+            is LinkMessage.Close -> finishWith(LinkResult.Exit(message.status))
+            LinkMessage.Loaded -> onLinkLoaded()
+            null -> Unit
+        }
+    }
+
+    private fun onLinkLoaded() {
+        main.removeCallbacks(loadTimeout)
+        main.removeCallbacks(revealCloseButton)
+        loaded = true
+        navigationFailed = false
+        closeButton.visibility = View.GONE
+        val view = webView ?: return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            view.evaluateJavascript(buildDocumentStartScript(BuildConfig.SDK_VERSION), null)
+        }
+        view.evaluateJavascript(buildSdkSpecsScript(BuildConfig.SDK_VERSION), null)
+    }
+
+    // --- WebView clients -----------------------------------------------------
+
+    private val linkWebViewClient = object : WebViewClient() {
+        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+            val decision = decideNavigation(request.url.toString(), request.isForMainFrame, built.origin)
+            if (decision is NavigationDecision.OpenExternal) launcher.open(decision)
+            // Return true to cancel; only `Load` proceeds in the WebView.
+            return decision !is NavigationDecision.Load
+        }
+
+        override fun onPageFinished(view: WebView, url: String) {
+            // Fallback for Link builds that never post `loaded`: the main-frame
+            // page finished, so stop the load timer.
+            if (getOrigin(url) == built.origin) main.removeCallbacks(loadTimeout)
+        }
+
+        override fun onReceivedError(
+            view: WebView,
+            request: WebResourceRequest,
+            error: WebResourceError,
+        ) {
+            if (request.isForMainFrame) onMainFrameLoadFailed()
+        }
+
+        override fun onReceivedHttpError(
+            view: WebView,
+            request: WebResourceRequest,
+            errorResponse: WebResourceResponse,
+        ) {
+            if (request.isForMainFrame) onMainFrameLoadFailed()
+        }
+
+        override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+            // MUST return true; returning false crashes the host app (§2.3).
+            webView = null
+            view.destroy()
+            if (closing) {
+                finishWith(LinkResult.Exit(LinkExitStatus.CANCELED))
+            } else {
+                finishWith(
+                    LinkResult.Error(
+                        LinkError(LinkErrorCode.SESSION_INTERRUPTED, "The Link WebView stopped."),
+                    ),
+                )
+            }
+            return true
+        }
+    }
+
+    private val linkChromeClient = object : WebChromeClient() {
+        override fun onCreateWindow(
+            view: WebView,
+            isDialog: Boolean,
+            isUserGesture: Boolean,
+            resultMsg: android.os.Message,
+        ): Boolean {
+            // Read the target URL through a throwaway WebView and route it, so
+            // `window.open` / `target=_blank` reaches the wallet or browser (N4).
+            val popup = WebView(this@LinkActivity)
+            popup.webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(v: WebView, request: WebResourceRequest): Boolean {
+                    val decision = decideNewWindow(request.url.toString())
+                    if (decision is NavigationDecision.OpenExternal) launcher.open(decision)
+                    v.destroy()
+                    return true
+                }
+            }
+            (resultMsg.obj as WebView.WebViewTransport).webView = popup
+            resultMsg.sendToTarget()
+            return true
+        }
+
+        override fun onConsoleMessage(message: ConsoleMessage): Boolean = true
+    }
+
+    private fun onMainFrameLoadFailed() {
+        if (loaded && !closing) {
+            // A page the user may be halfway through failed: keep the session and
+            // surface the native close button instead of discarding it.
+            navigationFailed = true
+            closeButton.visibility = View.VISIBLE
+        } else {
+            onPreLoadFailure()
+        }
+    }
+
+    private fun onPreLoadFailure() {
+        if (closing) {
+            finishWith(LinkResult.Exit(LinkExitStatus.CANCELED))
+        } else {
+            finishWith(LinkResult.Error(LinkError(LinkErrorCode.LOAD_ERROR, "The Link page failed to load.")))
+        }
+    }
+
+    // --- Lifecycle control ---------------------------------------------------
+
+    private fun startLoadGuards() {
+        main.postDelayed(loadTimeout, LINK_LOAD_TIMEOUT_MS)
+        main.postDelayed(revealCloseButton, CLOSE_BUTTON_DELAY_MS)
+    }
+
+    /** Host- or user-initiated close: ask Link to close, then tear down. */
+    private fun requestClose() {
+        if (done || closing) return
+        closing = true
+        main.removeCallbacks(loadTimeout)
+        webView?.evaluateJavascript(buildCloseRequestedScript(), null)
+        main.postDelayed(graceTimeout, CLOSE_GRACE_MS)
+    }
+
+    private val backCallback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            val view = webView
+            if (view != null && view.canGoBack() && !closing) {
+                view.goBack()
+            } else {
+                requestClose()
+            }
+        }
+    }
+
+    private fun finishWith(result: LinkResult) {
+        if (done) return
+        done = true
+        clearTimers()
+        deliverResult(result)
+        finish()
+    }
+
+    private fun deliverResult(result: LinkResult) {
+        setResult(RESULT_OK, Intent().putExtra(EXTRA_RESULT, result))
+    }
+
+    private fun clearTimers() {
+        main.removeCallbacks(loadTimeout)
+        main.removeCallbacks(graceTimeout)
+        main.removeCallbacks(revealCloseButton)
+    }
+
+    private fun isDark(config: LinkConfiguration): Boolean {
+        val theme = config.options.theme
+        return theme == com.meshpay.link.LinkTheme.DARK ||
+            (theme != com.meshpay.link.LinkTheme.LIGHT && isSystemDark())
+    }
+
+    private fun isSystemDark(): Boolean {
+        val mask = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        return mask == android.content.res.Configuration.UI_MODE_NIGHT_YES
+    }
+
+    override fun onDestroy() {
+        ActiveSession.unregister(closeRequester)
+        clearTimers()
+        webView?.destroy()
+        webView = null
+        super.onDestroy()
+    }
+
+    internal companion object {
+        private const val EXTRA_CONFIG = "com.meshpay.link.CONFIG"
+        private const val EXTRA_RESULT = "com.meshpay.link.RESULT"
+
+        fun newIntent(context: Context, config: LinkConfiguration): Intent =
+            Intent(context, LinkActivity::class.java).putExtra(EXTRA_CONFIG, config)
+
+        fun resultFrom(intent: Intent?): LinkResult? =
+            intent?.let { intentResult(it) }
+
+        private fun intentConfig(intent: Intent): LinkConfiguration? =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(EXTRA_CONFIG, LinkConfiguration::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(EXTRA_CONFIG)
+            }
+
+        private fun intentResult(intent: Intent): LinkResult? =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(EXTRA_RESULT, LinkResult::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(EXTRA_RESULT)
+            }
+    }
+}

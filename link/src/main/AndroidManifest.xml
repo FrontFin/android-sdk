@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      LinkActivity is internal to the SDK: exported=false, so only the host app
+      opens it (through LinkContract). configChanges keeps rotation and dark-mode
+      changes from recreating the WebView and losing the session (§2.8, §5.3).
+      No runtime permissions are declared for v1 (§2.7).
+    -->
+    <application>
+        <activity
+            android:name="com.meshpay.link.internal.LinkActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+            android:windowSoftInputMode="adjustResize" />
+    </application>
+
+</manifest>

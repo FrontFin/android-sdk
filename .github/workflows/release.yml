@@ -1,0 +1,163 @@
+# Runs on every push to main and on manual triggers. Same model as the other Mesh
+# mobile SDKs (§2.11): the version in gradle/libs.versions.toml is the source of
+# truth. Releasing means running the bump-version skill, opening a PR and merging
+# it — nothing here is manual.
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version: ${{ steps.check.outputs.version }}
+      previous_tag: ${{ steps.check.outputs.previous_tag }}
+      bump_type: ${{ steps.check.outputs.bump_type }}
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version and compare to the latest tag
+        id: check
+        run: |
+          VERSION=$(grep -E '^meshpay-link\s*=' gradle/libs.versions.toml | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "Manifest version: $VERSION"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version '$VERSION' is not strict MAJOR.MINOR.PATCH"; exit 1
+          fi
+
+          LATEST=$(git tag --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
+          echo "Latest tag: ${LATEST:-<none>}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "previous_tag=$LATEST" >> "$GITHUB_OUTPUT"
+
+          if [[ -z "$LATEST" ]]; then
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            echo "bump_type=Minor" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$VERSION" == "$LATEST" ]]; then
+            echo "Version unchanged; nothing to release."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+            echo "::error::Tag $VERSION already exists (accidental reuse)"; exit 1
+          fi
+          HIGHEST=$(printf '%s\n%s\n' "$VERSION" "$LATEST" | sort -V | tail -n1)
+          if [[ "$HIGHEST" != "$VERSION" ]]; then
+            echo "::error::Version $VERSION is lower than the latest tag $LATEST (downgrade)"; exit 1
+          fi
+
+          IFS=. read -r nM nm np <<< "$VERSION"
+          IFS=. read -r oM om op <<< "$LATEST"
+          if [[ "$nM" != "$oM" ]]; then BUMP=Major; elif [[ "$nm" != "$om" ]]; then BUMP=Minor; else BUMP=Patch; fi
+          echo "bump_type=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+
+      - name: Validate changelog
+        if: steps.check.outputs.should_release == 'true'
+        run: |
+          test -f CHANGELOG.md || { echo "::error::CHANGELOG.md is missing"; exit 1; }
+          grep -q "^## ${{ steps.check.outputs.version }}\b" CHANGELOG.md \
+            || { echo "::error::CHANGELOG.md has no '## ${{ steps.check.outputs.version }}' entry"; exit 1; }
+
+  ci:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  publish:
+    needs: [check-version, ci]
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 ☕
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle 🐘
+        uses: gradle/actions/setup-gradle@v4
+
+      # Central Portal, signed in memory (SIGNING_KEY is an ASCII-armored key).
+      - name: Publish to Maven Central 🚀
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+        run: ./gradlew link:publishAndReleaseToMavenCentral --no-configuration-cache
+
+  release:
+    needs: [check-version, publish]
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create GitHub Release (creates the tag) 🏷️
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.check-version.outputs.version }}
+          PREVIOUS_TAG: ${{ needs.check-version.outputs.previous_tag }}
+        run: |
+          # Release notes = this version's CHANGELOG section.
+          awk -v v="## $VERSION" '
+            $0 ~ "^"v"($|[^0-9.])" {grab=1; next}
+            grab && /^## [0-9]/ {exit}
+            grab {print}
+          ' CHANGELOG.md > notes.md
+          if [[ -n "$PREVIOUS_TAG" ]]; then
+            echo "" >> notes.md
+            echo "**Full changelog:** https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...${VERSION}" >> notes.md
+          fi
+          gh release create "$VERSION" --target main --title "$VERSION" --notes-file notes.md
+
+      - name: Slack announcement 📣
+        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            blocks:
+              - type: header
+                text:
+                  type: plain_text
+                  text: ":android: Android SDK Release: ${{ needs.check-version.outputs.version }}"
+              - type: section
+                text:
+                  type: mrkdwn
+                  text: "*Bump:* ${{ needs.check-version.outputs.bump_type }}  •  <!subteam^S091246FEDR>  •  <https://github.com/${{ github.repository }}/releases/tag/${{ needs.check-version.outputs.version }}|Release notes>"
