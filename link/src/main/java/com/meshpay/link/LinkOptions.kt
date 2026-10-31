@@ -6,13 +6,8 @@ import kotlinx.parcelize.RawValue
 
 /** Which hosted Link deployment to open. */
 public enum class LinkEnvironment {
-    /** `https://link.meshpay.com` (default). */
     PROD,
-
-    /** `https://link.sbx.meshpay.com`. */
     SBX,
-
-    /** `https://link.dev.meshpay.com`. */
     DEV,
 }
 
@@ -20,8 +15,6 @@ public enum class LinkEnvironment {
 public enum class LinkTheme {
     LIGHT,
     DARK,
-
-    /** Resolved from the device appearance when Link opens. */
     SYSTEM,
 }
 
@@ -29,12 +22,12 @@ public enum class LinkTheme {
  * Optional Link settings. Every field is optional.
  *
  * @param environment which hosted deployment to open. Defaults to [LinkEnvironment.PROD].
- * @param language UI language as a locale code (e.g. `"es"`), sent to Link as `lng`.
+ * @param language UI language as a locale code (e.g. `"es"`).
  * @param theme how Link is themed. [LinkTheme.SYSTEM] follows the device appearance.
  * @param flow which screen Link opens on. Passed to Link as JSON, not validated.
  * @param integrationId pre-selects a wallet integration.
  * @param displayFiatCurrency ISO 4217 code (e.g. `"DKK"`) for the currency Link shows.
- * @param linkUrl advanced/testing only: a LocalCan tunnel (`*.localcan.dev`). Any other value is ignored.
+ * @param linkUrl testing only: a LocalCan tunnel (`*.localcan.dev`). Any other value is ignored.
  */
 
 @Parcelize
