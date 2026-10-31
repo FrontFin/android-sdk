@@ -25,13 +25,12 @@ public enum class LinkExitStatus(public val value: String) {
 
 /**
  * The outcome of a Link session, delivered exactly once through the Activity
- * Result API ([LinkContract]). This is the Android form of the web SDK's
- * `onExit` / `onError`: [Exit] and [Error] are never both delivered for the same
- * session.
+ * Result API ([LinkContract]). [Exit] and [Error] are never both delivered for
+ * the same session.
  */
 public sealed interface LinkResult : Parcelable {
 
-    /** The session ended normally. The Android form of `LinkExitSummary`. */
+    /** The session ended normally. */
     @Parcelize
     public data class Exit(public val status: LinkExitStatus) : LinkResult
 
