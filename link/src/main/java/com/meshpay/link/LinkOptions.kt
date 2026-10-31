@@ -26,22 +26,17 @@ public enum class LinkTheme {
 }
 
 /**
- * Optional Link settings. Every field is optional and has the same name,
- * semantics and URL parameter as `OpenLinkOptions` in `@meshpayhq/link-web-sdk`
- * (minus `target`, §2.2).
+ * Optional Link settings. Every field is optional.
  *
  * @param environment which hosted deployment to open. Defaults to [LinkEnvironment.PROD].
- * @param language UI language as a locale code (e.g. `"es"`, `"pt-BR"`), sent to Link as `lng`.
- * @param theme how Link is themed. [LinkTheme.SYSTEM] is resolved from the device
- *   appearance at open time, so the `th` parameter is always `light` or `dark`.
- * @param flow which screen Link opens on. Passed to Link as JSON, never validated here.
- * @param integrationId pre-selects a wallet integration so Link opens on its connect step.
- * @param displayFiatCurrency ISO 4217 code (e.g. `"DKK"`) for the currency Link shows amounts in.
- *   Passed through unvalidated, as on web.
- * @param linkUrl advanced/testing only: load Link from a LocalCan tunnel
- *   (`https://*.localcan.dev`). Any other value is ignored and [environment] is
- *   used. MUST NOT be wired to untrusted input.
+ * @param language UI language as a locale code (e.g. `"es"`), sent to Link as `lng`.
+ * @param theme how Link is themed. [LinkTheme.SYSTEM] follows the device appearance.
+ * @param flow which screen Link opens on. Passed to Link as JSON, not validated.
+ * @param integrationId pre-selects a wallet integration.
+ * @param displayFiatCurrency ISO 4217 code (e.g. `"DKK"`) for the currency Link shows.
+ * @param linkUrl advanced/testing only: a LocalCan tunnel (`*.localcan.dev`). Any other value is ignored.
  */
+
 @Parcelize
 public data class LinkOptions(
     public val environment: LinkEnvironment = LinkEnvironment.PROD,
@@ -55,3 +50,8 @@ public data class LinkOptions(
     public val displayFiatCurrency: String? = null,
     public val linkUrl: String? = null,
 ) : Parcelable
+
+
+
+
+
