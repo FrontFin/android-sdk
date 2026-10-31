@@ -2,6 +2,7 @@ package com.meshpay.link
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.RawValue
 
 /** Which hosted Link deployment to open. */
 public enum class LinkEnvironment {
@@ -46,7 +47,10 @@ public data class LinkOptions(
     public val environment: LinkEnvironment = LinkEnvironment.PROD,
     public val language: String? = null,
     public val theme: LinkTheme? = null,
-    public val flow: LinkFlowConfig? = null,
+    // `@RawValue`: LinkFlowConfig is a sealed interface, so Parcelize serialises it
+    // through writeValue()/readValue(). Every implementation is itself @Parcelize,
+    // so the value round-trips correctly.
+    public val flow: @RawValue LinkFlowConfig? = null,
     public val integrationId: String? = null,
     public val displayFiatCurrency: String? = null,
     public val linkUrl: String? = null,
