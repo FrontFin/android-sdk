@@ -1,12 +1,9 @@
 package com.meshpay.link.internal
 
 import com.meshpay.link.LinkEnvironment
-import com.meshpay.link.LinkFlowConfig
 import com.meshpay.link.LinkOptions
 import com.meshpay.link.LinkTheme
-import com.meshpay.link.LoginEntry
 import java.net.URLEncoder
-import java.util.Locale
 
 /** How long to wait for Link to load before reporting `load-timeout`. */
 internal const val LINK_LOAD_TIMEOUT_MS: Long = 15_000L
@@ -35,13 +32,14 @@ internal val LINK_URLS: Map<LinkEnvironment, String> = mapOf(
 internal data class BuiltLinkUrl(val href: String, val origin: String)
 
 /**
- * Build the Link UI URL exactly like `buildLinkUrl` in `@meshpayhq/link-web-sdk`:
- * parameters in the order `token`, `clientId`, `lng`, `th`, `flow`,
- * `integrationId`, `fiatCur`, each only when set, form-encoded.
+ * Build the Link UI URL exactly like `buildLinkUrl` in the web SDK: parameters in
+ * the order `token`, `clientId`, `lng`, `th`, `integrationId`, `fiatCur`, each
+ * only when set, form-encoded.
  *
  * @param isSystemDark the device appearance, used to resolve [LinkTheme.SYSTEM].
- * @throws IllegalArgumentException when `token` or `clientId` is blank, so a
- *   misconfigured integration fails at call time instead of opening a broken Link.
+ * @throws IllegalArgumentException when `token` or `clientId` is blank, with a
+ *   message naming the field. The public API never surfaces this throw:
+ *   [LinkActivity] catches it and reports `load-error` instead (§2.3).
  */
 internal fun buildLinkUrl(
     token: String,
@@ -50,9 +48,9 @@ internal fun buildLinkUrl(
     isSystemDark: Boolean,
 ): BuiltLinkUrl {
     val trimmedToken = token.trim()
-    require(trimmedToken.isNotEmpty()) { "LinkConfiguration: token is required" }
+    require(trimmedToken.isNotEmpty()) { "token is required." }
     val trimmedClientId = clientId.trim()
-    require(trimmedClientId.isNotEmpty()) { "LinkConfiguration: clientId is required" }
+    require(trimmedClientId.isNotEmpty()) { "clientId is required." }
 
     // `linkUrl` overrides the environment → URL map, but ONLY for a LocalCan tunnel
     // (https://*.localcan.dev). Anything else is ignored in favour of the
@@ -69,7 +67,6 @@ internal fun buildLinkUrl(
         add("clientId" to trimmedClientId)
         options.language?.let { add("lng" to it) }
         options.theme?.let { add("th" to resolveTheme(it, isSystemDark)) }
-        options.flow?.let { add("flow" to flowToJson(it)) }
         options.integrationId?.let { add("integrationId" to it) }
         options.displayFiatCurrency?.let { add("fiatCur" to it) }
     }
@@ -109,79 +106,8 @@ private fun appendQuery(base: String, params: List<Pair<String, String>>): Strin
 private val SCHEME_AUTHORITY_ONLY = Regex("^[a-z][a-z0-9+.-]*://[^/?#]*$", RegexOption.IGNORE_CASE)
 
 /**
- * application/x-www-form-urlencoded, byte-for-byte like the web SDK's `formEncode`
- * (which is `URLSearchParams`). `URLEncoder` leaves `A-Za-z0-9-_.*` unescaped,
- * encodes space as `+`, and emits upper-case `%XX`, which is exactly that set.
+ * application/x-www-form-urlencoded, byte-for-byte like the web SDK's `formEncode`.
+ * `URLEncoder` leaves `A-Za-z0-9-_.*` unescaped, encodes space as `+`, and emits
+ * upper-case `%XX`, which is exactly that set.
  */
 private fun formEncode(value: String): String = URLEncoder.encode(value, "UTF-8")
-
-/**
- * Serialise a [LinkFlowConfig] to the same JSON the web SDK sends: the value of
- * `JSON.stringify(flow)`. Hand-built with an ordered writer so the output is
- * deterministic; Link parses it as JSON, so key order never matters to Link.
- */
-internal fun flowToJson(flow: LinkFlowConfig): String = when (flow) {
-    is LinkFlowConfig.Login -> jsonObject(
-        "flow" to jsonString("login"),
-        "entry" to loginEntryToJson(flow.entry),
-    )
-
-    is LinkFlowConfig.EnterAmount -> jsonObject(
-        buildList {
-            add("flow" to jsonString("enter-amount"))
-            flow.depositHomeDrawer?.let { add("depositHomeDrawer" to it.toString()) }
-            flow.showBuyOption?.let { add("showBuyOption" to it.toString()) }
-        },
-    )
-
-    LinkFlowConfig.FiatOnRamp -> jsonObject("flow" to jsonString("fiatOnRamp"))
-    LinkFlowConfig.FiatOffRamp -> jsonObject("flow" to jsonString("fiatOffRamp"))
-}
-
-private fun loginEntryToJson(entry: LoginEntry): String = when (entry) {
-    LoginEntry.Catalog -> jsonObject("type" to jsonString("catalog"))
-    is LoginEntry.DepositHome -> jsonObject(
-        buildList {
-            add("type" to jsonString("deposit-home"))
-            entry.showBuyOption?.let { add("showBuyOption" to it.toString()) }
-        },
-    )
-
-    is LoginEntry.DepositHomeIntegrations -> jsonObject(
-        buildList {
-            add("type" to jsonString("deposit-home-integrations"))
-            entry.showBuyOption?.let { add("showBuyOption" to it.toString()) }
-        },
-    )
-}
-
-private fun jsonObject(vararg entries: Pair<String, String>): String = jsonObject(entries.toList())
-
-private fun jsonObject(entries: List<Pair<String, String>>): String =
-    entries.joinToString(prefix = "{", postfix = "}") { (key, encodedValue) ->
-        "${jsonString(key)}:$encodedValue"
-    }
-
-/** JSON string literal with the escaping `JSON.stringify` applies. */
-private fun jsonString(value: String): String {
-    val sb = StringBuilder(value.length + 2)
-    sb.append('"')
-    for (ch in value) {
-        when (ch) {
-            '"' -> sb.append("\\\"")
-            '\\' -> sb.append("\\\\")
-            '\n' -> sb.append("\\n")
-            '\r' -> sb.append("\\r")
-            '\t' -> sb.append("\\t")
-            '\b' -> sb.append("\\b")
-            '\u000C' -> sb.append("\\f")
-            else -> if (ch < ' ') {
-                sb.append("\\u").append(String.format(Locale.ROOT, "%04x", ch.code))
-            } else {
-                sb.append(ch)
-            }
-        }
-    }
-    sb.append('"')
-    return sb.toString()
-}

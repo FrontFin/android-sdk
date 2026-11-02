@@ -10,7 +10,7 @@ bridge protocol. The solution design is the "MFS SDK Solution Design" (Notion).
 ```
 link/                                  → com.meshpay:link (published AAR)
   src/main/java/com/meshpay/link/
-    LinkConfiguration, LinkOptions, LinkFlowConfig, LinkResult, LinkError   (public API)
+    LinkConfiguration, LinkOptions, LinkResult, LinkError   (public API)
     LinkContract        ActivityResultContract<LinkConfiguration, LinkResult>
     MeshpayLink         closeActiveSession()
     internal/           LinkActivity, LinkUrlBuilder, Origin, NavigationPolicy, BridgeMessage, ExternalLauncher

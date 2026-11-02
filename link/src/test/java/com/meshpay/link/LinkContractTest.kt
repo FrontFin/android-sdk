@@ -2,7 +2,6 @@ package com.meshpay.link
 
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -27,8 +26,12 @@ class LinkContractTest {
     }
 
     @Test
-    fun `blank token or clientId throws at construction`() {
-        assertThrows(IllegalArgumentException::class.java) { LinkConfiguration("  ", "cid") }
-        assertThrows(IllegalArgumentException::class.java) { LinkConfiguration("tok", "   ") }
+    fun `blank token or clientId does not throw at construction`() {
+        // Blank values are reported as load-error by LinkActivity, never thrown
+        // to the host (§2.2); constructing the configuration must not throw.
+        val blankToken = LinkConfiguration("  ", "cid")
+        val blankClientId = LinkConfiguration("tok", "   ")
+        assertEquals("  ", blankToken.token)
+        assertEquals("   ", blankClientId.clientId)
     }
 }

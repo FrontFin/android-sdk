@@ -54,8 +54,8 @@ The result is delivered **exactly once** and survives host Activity recreation.
 
 | Field | Required | Description |
 | --- | --- | --- |
-| `token` | yes | Session token from `POST /v2/sessions`. A single-use exchange code; trimmed, rejected when blank. |
-| `clientId` | yes | Your Mesh client ID. Trimmed; a blank value throws `IllegalArgumentException` at construction, before anything opens. |
+| `token` | yes | Session token from `POST /v2/sessions`. A single-use exchange code; trimmed. A blank value is reported as `load-error` (see below), not thrown. |
+| `clientId` | yes | Your Mesh client ID. Trimmed. A blank value is reported through `LinkResult.Error` with `load-error`, before anything opens — nothing is thrown. |
 | `options` | no | `LinkOptions` — every field optional. |
 
 ### `LinkOptions`
@@ -65,7 +65,6 @@ The result is delivered **exactly once** and survives host Activity recreation.
 | `environment` | `LinkEnvironment` | `PROD` | `PROD`, `SBX` or `DEV`. |
 | `language` | `String?` | unset | Locale code, sent to Link as `lng`. |
 | `theme` | `LinkTheme?` | unset | `LIGHT`, `DARK` or `SYSTEM` (resolved from the device appearance at open time). |
-| `flow` | `LinkFlowConfig?` | unset | Which screen Link opens on. Passed to Link as JSON, never validated here. |
 | `integrationId` | `String?` | unset | Pre-selects a wallet integration. |
 | `displayFiatCurrency` | `String?` | unset | ISO 4217 code (e.g. `"DKK"`). |
 | `linkUrl` | `String?` | unset | Advanced/testing only: a LocalCan tunnel (`https://*.localcan.dev`). Any other value is ignored. **Never** wire this to untrusted input. |
@@ -100,7 +99,7 @@ developers only — it never contains the token, the Link URL or a stack trace.
 
 | Code | Meaning |
 | --- | --- |
-| `LOAD_ERROR` | The page failed to load. |
+| `LOAD_ERROR` | The page failed to load (including an HTTP 4xx/5xx on the main document), or `token`/`clientId` was blank. |
 | `LOAD_TIMEOUT` | The page did not load within 15 seconds. |
 | `SESSION_INTERRUPTED` | The WebView renderer died, or the process was killed mid-session, and Link cannot resume. |
 

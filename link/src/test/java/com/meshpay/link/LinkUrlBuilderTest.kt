@@ -13,9 +13,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Runs the shared URL vectors U1–U13 (`test-vectors/link-url.json`, §2.4). Tests
- * compare decoded query values; `flow` is compared as parsed JSON, so key order
- * and `+`/`%20` differences never fail a test.
+ * Runs the shared URL vectors U1–U12 (`test-vectors/link-url.json`, §2.4). Tests
+ * compare decoded query values, so `+`/`%20` differences never fail a test.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
@@ -52,21 +51,13 @@ class LinkUrlBuilderTest {
         val expectedUri = Uri.parse(expected)
         val actualUri = Uri.parse(actual)
         assertEquals("$id: base URL", base(expectedUri), base(actualUri))
-        assertEquals("$id: param names", paramNames(expectedUri), paramNames(actualUri))
-        for (name in paramNames(expectedUri)) {
-            val e = expectedUri.getQueryParameter(name)!!
-            val a = actualUri.getQueryParameter(name)!!
-            if (name == "flow") {
-                assertEquals("$id: flow JSON", canonical(e), canonical(a))
-            } else {
-                assertEquals("$id: $name", e, a)
-            }
+        assertEquals("$id: param names", expectedUri.queryParameterNames, actualUri.queryParameterNames)
+        for (name in expectedUri.queryParameterNames) {
+            assertEquals("$id: $name", expectedUri.getQueryParameter(name), actualUri.getQueryParameter(name))
         }
     }
 
     private fun base(uri: Uri): String = "${uri.scheme}://${uri.authority}${uri.path}"
-
-    private fun paramNames(uri: Uri): Set<String> = uri.queryParameterNames
 
     private fun parseOptions(json: JSONObject?): LinkOptions {
         if (json == null) return LinkOptions()
@@ -83,36 +74,10 @@ class LinkUrlBuilderTest {
                 "system" -> LinkTheme.SYSTEM
                 else -> null
             },
-            flow = json.optJSONObject("flow")?.let(::parseFlow),
             integrationId = json.optString("integrationId").ifEmpty { null },
             displayFiatCurrency = json.optString("displayFiatCurrency").ifEmpty { null },
             linkUrl = json.optString("linkUrl").ifEmpty { null },
         )
-    }
-
-    private fun parseFlow(json: JSONObject): LinkFlowConfig = when (json.getString("flow")) {
-        "fiatOnRamp" -> LinkFlowConfig.FiatOnRamp
-        "fiatOffRamp" -> LinkFlowConfig.FiatOffRamp
-        "enter-amount" -> LinkFlowConfig.EnterAmount(
-            depositHomeDrawer = if (json.has("depositHomeDrawer")) json.getBoolean("depositHomeDrawer") else null,
-            showBuyOption = if (json.has("showBuyOption")) json.getBoolean("showBuyOption") else null,
-        )
-
-        "login" -> LinkFlowConfig.Login(parseEntry(json.getJSONObject("entry")))
-        else -> error("unknown flow ${json.getString("flow")}")
-    }
-
-    private fun parseEntry(json: JSONObject): LoginEntry = when (json.getString("type")) {
-        "catalog" -> LoginEntry.Catalog
-        "deposit-home" -> LoginEntry.DepositHome(
-            if (json.has("showBuyOption")) json.getBoolean("showBuyOption") else null,
-        )
-
-        "deposit-home-integrations" -> LoginEntry.DepositHomeIntegrations(
-            if (json.has("showBuyOption")) json.getBoolean("showBuyOption") else null,
-        )
-
-        else -> error("unknown entry ${json.getString("type")}")
     }
 
     @Test
@@ -123,20 +88,24 @@ class LinkUrlBuilderTest {
         assertTrue(dark.href.contains("th=dark"))
     }
 
+    @Test
+    fun `blank token or clientId throws for the host to catch`() {
+        try {
+            buildLinkUrl("  ", "cid", LinkOptions(), isSystemDark = false)
+            fail("expected an error for a blank token")
+        } catch (e: IllegalArgumentException) {
+            assertEquals("token is required.", e.message)
+        }
+        try {
+            buildLinkUrl("tok", "   ", LinkOptions(), isSystemDark = false)
+            fail("expected an error for a blank clientId")
+        } catch (e: IllegalArgumentException) {
+            assertEquals("clientId is required.", e.message)
+        }
+    }
+
     private fun loadVectors(path: String): JSONArray {
         val text = javaClass.classLoader!!.getResourceAsStream(path)!!.bufferedReader().readText()
         return JSONObject(text).getJSONArray("vectors")
-    }
-
-    /** Recursively sorts object keys so two JSON strings compare regardless of order. */
-    private fun canonical(json: String): String = canonicalValue(JSONObject(json))
-
-    private fun canonicalValue(value: Any?): String = when (value) {
-        is JSONObject -> value.keys().asSequence().sorted()
-            .joinToString(",", "{", "}") { "$it:${canonicalValue(value.get(it))}" }
-
-        is JSONArray -> (0 until value.length()).joinToString(",", "[", "]") { canonicalValue(value.get(it)) }
-        is String -> "\"$value\""
-        else -> value.toString()
     }
 }

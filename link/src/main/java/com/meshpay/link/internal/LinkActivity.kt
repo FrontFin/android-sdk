@@ -94,7 +94,18 @@ internal class LinkActivity : ComponentActivity() {
         config = incoming
         launcher = ExternalLauncher(this)
 
-        built = buildLinkUrl(config.token, config.clientId, config.options, isSystemDark())
+        // A blank token/clientId is reported as load-error, never thrown to the
+        // host app: the builder throws internally and is caught here (§2.2, §2.3).
+        built = try {
+            buildLinkUrl(config.token, config.clientId, config.options, isSystemDark())
+        } catch (e: IllegalArgumentException) {
+            deliverResult(
+                LinkResult.Error(LinkError(LinkErrorCode.LOAD_ERROR, e.message ?: "Invalid configuration.")),
+            )
+            done = true
+            finish()
+            return
+        }
         val dark = isDark(config)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
