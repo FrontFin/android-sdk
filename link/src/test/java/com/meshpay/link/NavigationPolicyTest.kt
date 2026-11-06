@@ -11,7 +11,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Runs the shared navigation vectors N1–N9 (`test-vectors/navigation.json`, §2.6). */
+/** Runs the shared navigation vectors N1–N8 (`test-vectors/navigation.json`, §2.6). */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class NavigationPolicyTest {

@@ -67,7 +67,6 @@ The result is delivered **exactly once** and survives host Activity recreation.
 | `theme` | `LinkTheme?` | unset | `LIGHT`, `DARK` or `SYSTEM` (resolved from the device appearance at open time). |
 | `integrationId` | `String?` | unset | Pre-selects a wallet integration. |
 | `displayFiatCurrency` | `String?` | unset | ISO 4217 code (e.g. `"DKK"`). |
-| `linkUrl` | `String?` | unset | Advanced/testing only: a LocalCan tunnel (`https://*.localcan.dev`). Any other value is ignored. **Never** wire this to untrusted input. |
 
 ## Session status
 

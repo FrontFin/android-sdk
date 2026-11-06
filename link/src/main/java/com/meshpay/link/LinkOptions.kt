@@ -25,7 +25,6 @@ public enum class LinkTheme {
  * @param theme how Link is themed. [LinkTheme.SYSTEM] follows the device appearance.
  * @param integrationId pre-selects a wallet integration.
  * @param displayFiatCurrency ISO 4217 code (e.g. `"DKK"`) for the currency Link shows.
- * @param linkUrl testing only: a LocalCan tunnel (`*.localcan.dev`). Any other value is ignored.
  */
 @Parcelize
 public data class LinkOptions(
@@ -34,5 +33,4 @@ public data class LinkOptions(
     public val theme: LinkTheme? = null,
     public val integrationId: String? = null,
     public val displayFiatCurrency: String? = null,
-    public val linkUrl: String? = null,
 ) : Parcelable

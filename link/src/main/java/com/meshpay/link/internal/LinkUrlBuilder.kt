@@ -12,7 +12,10 @@ internal const val LINK_LOAD_TIMEOUT_MS: Long = 15_000L
 internal const val CLOSE_GRACE_MS: Long = 1_000L
 
 /** How long the native close button stays hidden after a session opens. */
-internal const val CLOSE_BUTTON_DELAY_MS: Long = 3_000L
+internal const val CLOSE_BUTTON_DELAY_MS: Long = 2_000L
+
+/** How long the native loading spinner stays hidden after a session opens. */
+internal const val LOADER_DELAY_MS: Long = 1_000L
 
 /** Platform identifier announced to Link. Link only recognises this exact string. */
 internal const val SDK_PLATFORM: String = "android"
@@ -52,15 +55,7 @@ internal fun buildLinkUrl(
     val trimmedClientId = clientId.trim()
     require(trimmedClientId.isNotEmpty()) { "clientId is required." }
 
-    // `linkUrl` overrides the environment → URL map, but ONLY for a LocalCan tunnel
-    // (https://*.localcan.dev). Anything else is ignored in favour of the
-    // environment default, so a stray or untrusted value can never redirect Link.
-    val linkUrl = options.linkUrl
-    val base = if (linkUrl != null && isLocalCanTunnel(linkUrl)) {
-        linkUrl
-    } else {
-        LINK_URLS[options.environment] ?: LINK_URLS.getValue(LinkEnvironment.PROD)
-    }
+    val base = LINK_URLS[options.environment] ?: LINK_URLS.getValue(LinkEnvironment.PROD)
 
     val params = buildList {
         add("token" to trimmedToken)
@@ -82,14 +77,6 @@ internal fun resolveTheme(theme: LinkTheme, isSystemDark: Boolean): String = whe
     LinkTheme.LIGHT -> "light"
     LinkTheme.DARK -> "dark"
     LinkTheme.SYSTEM -> if (isSystemDark) "dark" else "light"
-}
-
-/** True only for an `https://*.localcan.dev` tunnel URL (subdomains only). */
-private fun isLocalCanTunnel(value: String): Boolean {
-    val origin = getOrigin(value) ?: return false
-    if (!origin.startsWith("https://")) return false
-    val host = origin.removePrefix("https://").substringBefore(':')
-    return host.endsWith(".localcan.dev")
 }
 
 private fun appendQuery(base: String, params: List<Pair<String, String>>): String {

@@ -26,7 +26,7 @@ class OriginTest {
     fun `getOrigin drops default ports and rejects credentials`() {
         assertEquals("https://link.meshpay.com", getOrigin("https://link.meshpay.com/path?x=1"))
         assertEquals("https://link.meshpay.com", getOrigin("https://LINK.meshpay.com:443/"))
-        assertEquals("https://abc.localcan.dev:8443", getOrigin("https://abc.localcan.dev:8443/x"))
+        assertEquals("https://abc.example.com:8443", getOrigin("https://abc.example.com:8443/x"))
         assertNull(getOrigin("https://user@link.meshpay.com"))
         assertNull(getOrigin("mailto:a@b.com"))
         assertNull(getOrigin("https://link meshpay.com"))

@@ -3,6 +3,7 @@ package com.meshpay.link.internal
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -20,6 +21,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.ProgressBar
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.core.view.ViewCompat
@@ -51,6 +53,7 @@ internal class LinkActivity : ComponentActivity() {
     private lateinit var root: FrameLayout
     private var webView: WebView? = null
     private lateinit var closeButton: ImageButton
+    private lateinit var loader: ProgressBar
 
     private val main = Handler(Looper.getMainLooper())
     private val loadTimeout = Runnable {
@@ -58,6 +61,7 @@ internal class LinkActivity : ComponentActivity() {
     }
     private val graceTimeout = Runnable { finishWith(LinkResult.Exit(LinkExitStatus.CANCELED)) }
     private val revealCloseButton = Runnable { closeButton.visibility = View.VISIBLE }
+    private val revealLoader = Runnable { loader.visibility = View.VISIBLE }
 
     private var done = false
     private var closing = false
@@ -117,6 +121,7 @@ internal class LinkActivity : ComponentActivity() {
         setContentView(root)
         addWebView()
         addCloseButton(dark)
+        addLoader(dark)
         applyInsets()
 
         ActiveSession.register(closeRequester)
@@ -178,6 +183,26 @@ internal class LinkActivity : ComponentActivity() {
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.TOP or Gravity.START,
+            ),
+        )
+    }
+
+    /** A small centred spinner shown while Link loads, tinted like the close
+     *  button. It never blocks touches (a non-clickable view) and is shown only
+     *  before Link's `loaded`. */
+    private fun addLoader(dark: Boolean) {
+        val foreground = if (dark) BACKGROUND_LIGHT else BACKGROUND_DARK
+        loader = ProgressBar(this).apply {
+            isIndeterminate = true
+            indeterminateTintList = ColorStateList.valueOf(foreground)
+            visibility = View.GONE
+        }
+        root.addView(
+            loader,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER,
             ),
         )
     }
@@ -257,9 +282,11 @@ internal class LinkActivity : ComponentActivity() {
     private fun onLinkLoaded() {
         main.removeCallbacks(loadTimeout)
         main.removeCallbacks(revealCloseButton)
+        main.removeCallbacks(revealLoader)
         loaded = true
         navigationFailed = false
         closeButton.visibility = View.GONE
+        loader.visibility = View.GONE
         val view = webView ?: return
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             view.evaluateJavascript(buildDocumentStartScript(BuildConfig.SDK_VERSION), null)
@@ -366,6 +393,7 @@ internal class LinkActivity : ComponentActivity() {
     private fun startLoadGuards() {
         main.postDelayed(loadTimeout, LINK_LOAD_TIMEOUT_MS)
         main.postDelayed(revealCloseButton, CLOSE_BUTTON_DELAY_MS)
+        main.postDelayed(revealLoader, LOADER_DELAY_MS)
     }
 
     /** Host- or user-initiated close: ask Link to close, then tear down. */
@@ -404,6 +432,7 @@ internal class LinkActivity : ComponentActivity() {
         main.removeCallbacks(loadTimeout)
         main.removeCallbacks(graceTimeout)
         main.removeCallbacks(revealCloseButton)
+        main.removeCallbacks(revealLoader)
     }
 
     private fun isDark(config: LinkConfiguration): Boolean {

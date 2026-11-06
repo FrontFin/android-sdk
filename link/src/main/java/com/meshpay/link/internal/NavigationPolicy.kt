@@ -37,7 +37,7 @@ private val ALLOWED_ABOUT_PAGES = setOf("about:blank", "about:srcdoc")
 private val PLAIN_SCHEME = Regex("^[a-z][a-z0-9+.-]*$", RegexOption.IGNORE_CASE)
 
 /**
- * Where a WebView navigation request goes (solution design §2.6, vectors N1–N9).
+ * Where a WebView navigation request goes (solution design §2.6, vectors N1–N8).
  *
  * - The session's own Link origin loads in the WebView; any other `https` page in
  *   the main frame (OAuth, on-ramp, exchange handoff) opens externally, so

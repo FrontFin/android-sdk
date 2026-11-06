@@ -25,7 +25,7 @@ test-vectors/                          link-url.json, navigation.json (shared ac
   is generated from it; never hard-code a version anywhere else. Release with the
   `bump-version` skill (`.claude/commands/bump-version.md`).
 - **Shared test vectors** (`test-vectors/`) are copied from the other SDK repos and
-  must stay in sync. The URL builder (U1–U13) and navigation policy (N1–N9) are
+  must stay in sync. The URL builder (U1–U7) and navigation policy (N1–N8) are
   pure functions tested against them.
 - **Pure logic stays pure.** `LinkUrlBuilder`, `Origin`, `NavigationPolicy`,
   `BridgeMessage` take no Android framework types (beyond `org.json`), so they run
