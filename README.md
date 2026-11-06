@@ -84,7 +84,7 @@ server-side.
 ## Closing from your app
 
 ```kotlin
-MeshPayLink.closeActiveSession()
+LinkHandle.closeActiveSession()
 ```
 
 Link is asked to close gracefully first, so a user who already finished the flow

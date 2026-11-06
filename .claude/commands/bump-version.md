@@ -40,7 +40,7 @@ git diff <latest-tag>..HEAD -- \
   'link/src/main/java/com/meshpay/link/LinkResult.kt' \
   'link/src/main/java/com/meshpay/link/LinkError.kt' \
   'link/src/main/java/com/meshpay/link/LinkContract.kt' \
-  'link/src/main/java/com/meshpay/link/MeshPayLink.kt'
+  'link/src/main/java/com/meshpay/link/LinkHandle.kt'
 ```
 
 Also capture the commit log for the changelog summary:
@@ -58,7 +58,7 @@ Analyse the diff against the public API (apply the highest matching level):
 #### MAJOR — any of:
 - A public type is **deleted or renamed** (`LinkConfiguration`, `LinkOptions`,
   `LinkResult`, `LinkExitStatus`, `LinkError`, `LinkErrorCode`, `LinkEnvironment`,
-  `LinkTheme`, `LinkContract`, `MeshPayLink`)
+  `LinkTheme`, `LinkContract`, `LinkHandle`)
 - A public property/parameter is removed, or a **required** parameter is added
 - A value is removed from `LinkErrorCode`, `LinkExitStatus`, `LinkEnvironment` or `LinkTheme`
 - The entry point or callback/result semantics change in a breaking way
