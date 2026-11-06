@@ -19,13 +19,13 @@ public object LinkHandle {
      * down regardless. Does nothing when no session is active. Safe to call from
      * any thread.
      */
-    public fun closeActiveSession() {
+    public fun close() {
         ActiveSession.requestClose()
     }
 }
 
 /**
- * Bridges [LinkHandle.closeActiveSession] to the running `LinkActivity`. At most
+ * Bridges [LinkHandle.close] to the running `LinkActivity`. At most
  * one session is active at a time (§2.3), so a single slot is enough.
  */
 internal object ActiveSession {

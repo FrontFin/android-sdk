@@ -12,7 +12,7 @@ link/                                  → com.meshpay:link (published AAR)
   src/main/java/com/meshpay/link/
     LinkConfiguration, LinkOptions, LinkResult, LinkError   (public API)
     LinkContract        ActivityResultContract<LinkConfiguration, LinkResult>
-    LinkHandle         closeActiveSession()
+    LinkHandle         close()
     internal/           LinkActivity, LinkUrlBuilder, Origin, NavigationPolicy, BridgeMessage, ExternalLauncher
   consumer-rules.pro
 example/                               pasted-token sample app
