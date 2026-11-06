@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -86,7 +87,6 @@ private fun LinkDemoScreen() {
     var language by remember { mutableStateOf("") }
     var fiat by remember { mutableStateOf("") }
     var integrationId by remember { mutableStateOf("") }
-    var linkUrl by remember { mutableStateOf("") }
     var result by remember { mutableStateOf<LinkResult?>(null) }
 
     val launcher = rememberLauncherForActivityResult(LinkContract()) { result = it }
@@ -98,6 +98,7 @@ private fun LinkDemoScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(insets)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -131,18 +132,14 @@ private fun LinkDemoScreen() {
             ClearableField("Language (e.g. en, es)", language) { language = it }
             ClearableField("Display fiat currency (e.g. USD, DKK)", fiat) { fiat = it }
             ClearableField("Integration ID (e.g. metamask)", integrationId) { integrationId = it }
-            ClearableField("Link URL (LocalCan tunnel — testing)", linkUrl, KeyboardType.Uri) { linkUrl = it }
 
-            result?.let {
-                SectionHeader("Link result")
-                Text(
-                    text = resultLine(it),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            SectionHeader("Link result")
+            Text(
+                text = resultLine(result),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
-            val canOpen = clientId.isNotBlank() && token.isNotBlank()
             Button(
                 onClick = {
                     result = null
@@ -156,12 +153,10 @@ private fun LinkDemoScreen() {
                                 language = language.trim().ifBlank { null },
                                 integrationId = integrationId.trim().ifBlank { null },
                                 displayFiatCurrency = fiat.trim().ifBlank { null },
-                                linkUrl = linkUrl.trim().ifBlank { null },
                             ),
                         ),
                     )
                 },
-                enabled = canOpen,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Surface,
@@ -266,7 +261,8 @@ private fun themeLabel(theme: LinkTheme?): String = when (theme) {
     LinkTheme.DARK -> "Dark"
 }
 
-private fun resultLine(result: LinkResult): String = when (result) {
+private fun resultLine(result: LinkResult?): String = when (result) {
+    null -> "No session yet"
     is LinkResult.Exit -> "Exit: ${result.status.value}"
     is LinkResult.Error -> "Error: ${result.error.code.value} — ${result.error.message}"
 }
