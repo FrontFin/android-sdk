@@ -1,6 +1,6 @@
-# CLAUDE.md — Meshpay Link Android SDK
+# CLAUDE.md — MeshPay Link Android SDK
 
-Context for working on this repo. The SDK opens the hosted Meshpay Link UI in a
+Context for working on this repo. The SDK opens the hosted MeshPay Link UI in a
 WebView; it is the Android peer of `FrontFin/react-native-sdk`, `FrontFin/ios-sdk`
 and `FrontFin/flutter-sdk`, and shares their public API, Link URL contract and
 bridge protocol. The solution design is the "MFS SDK Solution Design" (Notion).
@@ -12,7 +12,7 @@ link/                                  → com.meshpay:link (published AAR)
   src/main/java/com/meshpay/link/
     LinkConfiguration, LinkOptions, LinkResult, LinkError   (public API)
     LinkContract        ActivityResultContract<LinkConfiguration, LinkResult>
-    MeshpayLink         closeActiveSession()
+    MeshPayLink         closeActiveSession()
     internal/           LinkActivity, LinkUrlBuilder, Origin, NavigationPolicy, BridgeMessage, ExternalLauncher
   consumer-rules.pro
 example/                               pasted-token sample app

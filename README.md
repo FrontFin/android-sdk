@@ -1,7 +1,7 @@
-# Meshpay Link Android SDK
+# MeshPay Link Android SDK
 
-Opens the hosted [Meshpay Link](https://link.meshpay.com) UI full screen in a
-WebView, as the Android peer of the Meshpay React Native, iOS and Flutter SDKs.
+Opens the hosted [MeshPay Link](https://link.meshpay.com) UI full screen in a
+WebView, as the Android peer of the MeshPay React Native, iOS and Flutter SDKs.
 One public API, one Link URL contract and one bridge protocol across all of them.
 
 Published on Maven Central as **`com.meshpay:link`**.
@@ -84,7 +84,7 @@ server-side.
 ## Closing from your app
 
 ```kotlin
-MeshpayLink.closeActiveSession()
+MeshPayLink.closeActiveSession()
 ```
 
 Link is asked to close gracefully first, so a user who already finished the flow

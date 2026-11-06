@@ -10,7 +10,7 @@ import android.os.Looper
  * object is only for closing the session from your own UI (a custom button, a
  * timeout, a navigation event), the Android form of the web SDK's `close()`.
  */
-public object MeshpayLink {
+public object MeshPayLink {
 
     /**
      * Closes the active Link session, if one is open. Link is asked to close
@@ -25,7 +25,7 @@ public object MeshpayLink {
 }
 
 /**
- * Bridges [MeshpayLink.closeActiveSession] to the running `LinkActivity`. At most
+ * Bridges [MeshPayLink.closeActiveSession] to the running `LinkActivity`. At most
  * one session is active at a time (§2.3), so a single slot is enough.
  */
 internal object ActiveSession {
