@@ -20,8 +20,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "meshpay-android-sdk"
-
 // The published SDK artifact (com.meshpay:link) and the pasted-token sample app.
 include(":link")
 include(":example")
