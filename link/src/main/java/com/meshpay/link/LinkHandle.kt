@@ -11,7 +11,6 @@ import android.os.Looper
  * timeout, a navigation event), the Android form of the web SDK's `close()`.
  */
 public object LinkHandle {
-
     /**
      * Closes the active Link session, if one is open. Link is asked to close
      * gracefully first, so a user who already finished the flow is still reported

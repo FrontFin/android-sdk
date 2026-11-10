@@ -21,15 +21,16 @@ internal sealed interface NavigationDecision {
  * reach local storage; `android-app:` addresses an arbitrary component; `blob:`
  * is meaningless outside the page; `http:` is cleartext.
  */
-private val BLOCKED_SCHEMES = setOf(
-    "javascript",
-    "data",
-    "file",
-    "content",
-    "android-app",
-    "blob",
-    "http",
-)
+private val BLOCKED_SCHEMES =
+    setOf(
+        "javascript",
+        "data",
+        "file",
+        "content",
+        "android-app",
+        "blob",
+        "http",
+    )
 
 /** `about:` pages a frame may legitimately load (e.g. captcha iframes). */
 private val ALLOWED_ABOUT_PAGES = setOf("about:blank", "about:srcdoc")
@@ -83,7 +84,10 @@ internal fun decideNewWindow(url: String): NavigationDecision {
     return externalAppDecision(url, scheme)
 }
 
-private fun externalAppDecision(url: String, scheme: String): NavigationDecision {
+private fun externalAppDecision(
+    url: String,
+    scheme: String,
+): NavigationDecision {
     if (scheme == "intent") return intentDecision(url)
     // Deliberately not gated on `resolveActivity` / package visibility: on
     // Android 11+ it answers false for wallets the host manifest does not list
@@ -115,11 +119,12 @@ private fun intentDecision(url: String): NavigationDecision {
 
     val fallbackUrl = decodeFallback(fields["S.browser_fallback_url"])
     val scheme = fields["scheme"]?.lowercase()
-    val launchable = scheme != null &&
-        PLAIN_SCHEME.matches(scheme) &&
-        scheme !in BLOCKED_SCHEMES &&
-        scheme != "intent" &&
-        scheme != "about"
+    val launchable =
+        scheme != null &&
+            PLAIN_SCHEME.matches(scheme) &&
+            scheme !in BLOCKED_SCHEMES &&
+            scheme != "intent" &&
+            scheme != "about"
 
     if (launchable) {
         return NavigationDecision.OpenExternal("$scheme://$target", fallbackUrl)

@@ -17,7 +17,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class BridgeMessageTest {
-
     @Test
     fun `close with success status`() {
         val message = parseLinkMessage("""{"type":"close","payload":{"status":"success"}}""")

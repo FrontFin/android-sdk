@@ -19,7 +19,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class LinkUrlBuilderTest {
-
     @Test
     fun `matches the shared link-url vectors`() {
         val vectors = loadVectors("test-vectors/link-url.json")
@@ -47,7 +46,11 @@ class LinkUrlBuilderTest {
         }
     }
 
-    private fun assertUrlEquals(id: String, expected: String, actual: String) {
+    private fun assertUrlEquals(
+        id: String,
+        expected: String,
+        actual: String,
+    ) {
         val expectedUri = Uri.parse(expected)
         val actualUri = Uri.parse(actual)
         assertEquals("$id: base URL", base(expectedUri), base(actualUri))
@@ -62,18 +65,20 @@ class LinkUrlBuilderTest {
     private fun parseOptions(json: JSONObject?): LinkOptions {
         if (json == null) return LinkOptions()
         return LinkOptions(
-            environment = when (json.optString("environment")) {
-                "sbx" -> LinkEnvironment.SBX
-                "dev" -> LinkEnvironment.DEV
-                else -> LinkEnvironment.PROD
-            },
+            environment =
+                when (json.optString("environment")) {
+                    "sbx" -> LinkEnvironment.SBX
+                    "dev" -> LinkEnvironment.DEV
+                    else -> LinkEnvironment.PROD
+                },
             language = json.optString("language").ifEmpty { null },
-            theme = when (json.optString("theme")) {
-                "light" -> LinkTheme.LIGHT
-                "dark" -> LinkTheme.DARK
-                "system" -> LinkTheme.SYSTEM
-                else -> null
-            },
+            theme =
+                when (json.optString("theme")) {
+                    "light" -> LinkTheme.LIGHT
+                    "dark" -> LinkTheme.DARK
+                    "system" -> LinkTheme.SYSTEM
+                    else -> null
+                },
             integrationId = json.optString("integrationId").ifEmpty { null },
             displayFiatCurrency = json.optString("displayFiatCurrency").ifEmpty { null },
         )

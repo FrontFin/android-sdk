@@ -20,15 +20,19 @@ import com.meshpay.link.internal.LinkActivity
  * ```
  *
  * The result is delivered exactly once and survives host Activity recreation. A
- * blank `token` or `clientId` throws [IllegalArgumentException] when the
- * [LinkConfiguration] is constructed, before anything opens (§2.2).
+ * blank `token` or `clientId` is reported as [LinkResult.Error] with
+ * [LinkErrorCode.LOAD_ERROR], not thrown (§2.2).
  */
 public class LinkContract : ActivityResultContract<LinkConfiguration, LinkResult>() {
+    override fun createIntent(
+        context: Context,
+        input: LinkConfiguration,
+    ): Intent = LinkActivity.newIntent(context, input)
 
-    override fun createIntent(context: Context, input: LinkConfiguration): Intent =
-        LinkActivity.newIntent(context, input)
-
-    override fun parseResult(resultCode: Int, intent: Intent?): LinkResult =
+    override fun parseResult(
+        resultCode: Int,
+        intent: Intent?,
+    ): LinkResult =
         LinkActivity.resultFrom(intent)
             // No result extra means the Activity went away without reporting one
             // (e.g. the task was removed). Treat it as a cancel, never an error.

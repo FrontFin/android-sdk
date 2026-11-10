@@ -25,11 +25,12 @@ internal const val BACKGROUND_DARK: Int = 0xFF0E0D0D.toInt()
 internal const val BACKGROUND_LIGHT: Int = 0xFFFBFBFB.toInt()
 
 /** Hosted Link deployment base URLs. */
-internal val LINK_URLS: Map<LinkEnvironment, String> = mapOf(
-    LinkEnvironment.DEV to "https://link.dev.meshpay.com",
-    LinkEnvironment.PROD to "https://link.meshpay.com",
-    LinkEnvironment.SBX to "https://link.sbx.meshpay.com",
-)
+internal val LINK_URLS: Map<LinkEnvironment, String> =
+    mapOf(
+        LinkEnvironment.DEV to "https://link.dev.meshpay.com",
+        LinkEnvironment.PROD to "https://link.meshpay.com",
+        LinkEnvironment.SBX to "https://link.sbx.meshpay.com",
+    )
 
 /** The Link UI URL plus the origin bridge messages must come from. */
 internal data class BuiltLinkUrl(val href: String, val origin: String)
@@ -57,14 +58,15 @@ internal fun buildLinkUrl(
 
     val base = LINK_URLS[options.environment] ?: LINK_URLS.getValue(LinkEnvironment.PROD)
 
-    val params = buildList {
-        add("token" to trimmedToken)
-        add("clientId" to trimmedClientId)
-        options.language?.let { add("lng" to it) }
-        options.theme?.let { add("th" to resolveTheme(it, isSystemDark)) }
-        options.integrationId?.let { add("integrationId" to it) }
-        options.displayFiatCurrency?.let { add("fiatCur" to it) }
-    }
+    val params =
+        buildList {
+            add("token" to trimmedToken)
+            add("clientId" to trimmedClientId)
+            options.language?.let { add("lng" to it) }
+            options.theme?.let { add("th" to resolveTheme(it, isSystemDark)) }
+            options.integrationId?.let { add("integrationId" to it) }
+            options.displayFiatCurrency?.let { add("fiatCur" to it) }
+        }
 
     val href = appendQuery(base, params)
     // `base` is a constant or an origin-checked tunnel URL, so it always has one.
@@ -73,24 +75,26 @@ internal fun buildLinkUrl(
 }
 
 /** `light` or `dark`; `system` follows the device appearance. */
-internal fun resolveTheme(theme: LinkTheme, isSystemDark: Boolean): String = when (theme) {
-    LinkTheme.LIGHT -> "light"
-    LinkTheme.DARK -> "dark"
-    LinkTheme.SYSTEM -> if (isSystemDark) "dark" else "light"
-}
+internal fun resolveTheme(
+    theme: LinkTheme,
+    isSystemDark: Boolean,
+): String =
+    when (theme) {
+        LinkTheme.LIGHT -> "light"
+        LinkTheme.DARK -> "dark"
+        LinkTheme.SYSTEM -> if (isSystemDark) "dark" else "light"
+    }
 
-private fun appendQuery(base: String, params: List<Pair<String, String>>): String {
-    val hashIndex = base.indexOf('#')
-    val withoutHash = if (hashIndex == -1) base else base.substring(0, hashIndex)
-    val hash = if (hashIndex == -1) "" else base.substring(hashIndex)
-    // `new URL('https://host').toString()` is `https://host/`; match it.
-    val withPath = if (SCHEME_AUTHORITY_ONLY.matches(withoutHash)) "$withoutHash/" else withoutHash
+private fun appendQuery(
+    base: String,
+    params: List<Pair<String, String>>,
+): String {
+    // `base` is always one of LINK_URLS: a `scheme://host` origin with no path,
+    // query or fragment, so the result is `https://host/?...`, matching
+    // `new URL('https://host').toString()` + the query.
     val query = params.joinToString("&") { (key, value) -> "${formEncode(key)}=${formEncode(value)}" }
-    val separator = if (withPath.contains('?')) '&' else '?'
-    return "$withPath$separator$query$hash"
+    return "$base/?$query"
 }
-
-private val SCHEME_AUTHORITY_ONLY = Regex("^[a-z][a-z0-9+.-]*://[^/?#]*$", RegexOption.IGNORE_CASE)
 
 /**
  * application/x-www-form-urlencoded, byte-for-byte like the web SDK's `formEncode`.

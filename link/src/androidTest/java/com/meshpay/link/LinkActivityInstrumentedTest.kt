@@ -17,7 +17,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class LinkActivityInstrumentedTest {
-
     @Test
     fun contractBuildsALaunchableIntent() {
         val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext

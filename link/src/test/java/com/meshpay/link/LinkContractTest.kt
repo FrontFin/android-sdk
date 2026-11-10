@@ -11,7 +11,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class LinkContractTest {
-
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
 
     @Test

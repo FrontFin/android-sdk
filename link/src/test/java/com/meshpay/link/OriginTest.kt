@@ -13,7 +13,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class OriginTest {
-
     @Test
     fun `getScheme lower-cases and rejects whitespace`() {
         assertEquals("https", getScheme("HTTPS://link.meshpay.com"))
@@ -30,5 +29,12 @@ class OriginTest {
         assertNull(getOrigin("https://user@link.meshpay.com"))
         assertNull(getOrigin("mailto:a@b.com"))
         assertNull(getOrigin("https://link meshpay.com"))
+    }
+
+    @Test
+    fun `getOrigin rejects a missing or empty authority`() {
+        assertNull(getOrigin("https://"))
+        assertNull(getOrigin("notaurl"))
+        assertNull(getOrigin("https:///path"))
     }
 }

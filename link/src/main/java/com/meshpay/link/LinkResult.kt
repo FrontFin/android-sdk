@@ -29,7 +29,6 @@ public enum class LinkExitStatus(public val value: String) {
  * the same session.
  */
 public sealed interface LinkResult : Parcelable {
-
     /** The session ended normally. */
     @Parcelize
     public data class Exit(public val status: LinkExitStatus) : LinkResult

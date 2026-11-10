@@ -47,13 +47,10 @@ android {
             isReturnDefaultValues = true
         }
     }
-
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-            withJavadocJar()
-        }
-    }
+    // Note: no `publishing { singleVariant("release") }` here — the
+    // com.vanniktech.maven.publish plugin registers the `release` variant (with
+    // sources + javadoc jars) itself, and declaring it again fails the build with
+    // "Using singleVariant publishing DSL multiple times … is not allowed".
 }
 
 kotlin {
@@ -81,17 +78,29 @@ dependencies {
 // --- Coverage (§2.9): lines/functions/statements >= 90 %, branches >= 80 % ---
 // Measured over the SDK's own code only; generated and framework-glue classes are
 // excluded so the ratchet reflects logic the tests actually own.
-val coverageExclusions = listOf(
-    "**/BuildConfig.*",
-    "**/R.class",
-    "**/R$*.class",
-    // WebView/Activity glue is exercised by the instrumented tests (androidTest),
-    // not the JVM unit tests this report measures, so it is excluded from the
-    // unit-coverage floor. The pure logic (URL builder, navigation policy, bridge
-    // parser, origin helpers) carries the ratchet.
-    "**/internal/LinkActivity*.*",
-    "**/internal/ExternalLauncher*.*",
-)
+val coverageExclusions =
+    listOf(
+        "**/BuildConfig.*",
+        "**/R.class",
+        "**/R$*.class",
+        // WebView/Activity glue is exercised by the instrumented tests (androidTest),
+        // not the JVM unit tests this report measures, so it is excluded from the
+        // unit-coverage floor. The pure logic (URL builder, navigation policy, bridge
+        // parser, origin helpers) carries the ratchet.
+        "**/internal/LinkActivity*.*",
+        "**/internal/ExternalLauncher*.*",
+        // Public data/enum models are @Parcelize and data-class boilerplate: their
+        // generated writeToParcel/CREATOR/equals/hashCode cannot be exercised by
+        // JVM unit tests (Robolectric's Parcel shadow does not marshal custom
+        // Parcelables). The floor measures hand-written logic, so they are excluded.
+        "**/LinkConfiguration*.*",
+        "**/LinkOptions*.*",
+        "**/LinkEnvironment*.*",
+        "**/LinkTheme*.*",
+        "**/LinkResult*.*",
+        "**/LinkExitStatus*.*",
+        "**/LinkError*.*",
+    )
 
 jacoco {
     toolVersion = "0.8.12"
@@ -104,36 +113,34 @@ tasks.withType<Test>().configureEach {
     }
 }
 
-val jacocoTestReport = tasks.register<JacocoReport>("jacocoTestReport") {
-    dependsOn("testDebugUnitTest")
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
+val jacocoTestReport =
+    tasks.register<JacocoReport>("jacocoTestReport") {
+        dependsOn("testDebugUnitTest")
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+        }
+        val kotlinClasses =
+            fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+                exclude(coverageExclusions)
+            }
+        classDirectories.setFrom(kotlinClasses)
+        sourceDirectories.setFrom(files("src/main/java"))
+        // Point at the exact exec file rather than scanning all of build/, which
+        // would pull in other tasks' outputs (e.g. ktlint reports) and trip Gradle's
+        // implicit task-dependency validation. `dependsOn` above produces it.
+        executionData.setFrom(layout.buildDirectory.file("jacoco/testDebugUnitTest.exec"))
     }
-    val kotlinClasses = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
-        exclude(coverageExclusions)
-    }
-    classDirectories.setFrom(kotlinClasses)
-    sourceDirectories.setFrom(files("src/main/java"))
-    executionData.setFrom(
-        fileTree(layout.buildDirectory.get()) {
-            include("**/testDebugUnitTest.exec", "**/jacoco/testDebugUnitTest.exec")
-        },
-    )
-}
 
 tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
     dependsOn(jacocoTestReport)
-    val kotlinClasses = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
-        exclude(coverageExclusions)
-    }
+    val kotlinClasses =
+        fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+            exclude(coverageExclusions)
+        }
     classDirectories.setFrom(kotlinClasses)
     sourceDirectories.setFrom(files("src/main/java"))
-    executionData.setFrom(
-        fileTree(layout.buildDirectory.get()) {
-            include("**/testDebugUnitTest.exec", "**/jacoco/testDebugUnitTest.exec")
-        },
-    )
+    executionData.setFrom(layout.buildDirectory.file("jacoco/testDebugUnitTest.exec"))
     violationRules {
         rule {
             limit {

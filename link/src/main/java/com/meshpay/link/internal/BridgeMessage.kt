@@ -11,6 +11,7 @@ import org.json.JSONObject
  */
 internal sealed interface LinkMessage {
     data class Close(val status: LinkExitStatus) : LinkMessage
+
     data object Loaded : LinkMessage
 }
 
@@ -20,11 +21,12 @@ internal sealed interface LinkMessage {
  */
 internal fun parseLinkMessage(data: String?): LinkMessage? {
     if (data.isNullOrBlank()) return null
-    val message = try {
-        JSONObject(data)
-    } catch (_: JSONException) {
-        return null
-    }
+    val message =
+        try {
+            JSONObject(data)
+        } catch (_: JSONException) {
+            return null
+        }
     return when (message.optString("type")) {
         "close" -> {
             // Older Link builds post `close` with no payload. Only an explicit
@@ -52,20 +54,19 @@ internal fun buildDocumentStartScript(version: String): String =
  * The `meshSDKSpecs` handshake, sent after Link reports `loaded`. No `origin`:
  * the native transport does not need one.
  */
-internal fun buildSdkSpecsScript(version: String): String = buildPostMessageScript(
-    JSONObject()
-        .put("type", "meshSDKSpecs")
-        .put("payload", JSONObject().put("platform", SDK_PLATFORM).put("version", version)),
-)
+internal fun buildSdkSpecsScript(version: String): String =
+    buildPostMessageScript(
+        JSONObject()
+            .put("type", "meshSDKSpecs")
+            .put("payload", JSONObject().put("platform", SDK_PLATFORM).put("version", version)),
+    )
 
 /** Asks Link to close gracefully, so it can report the session status. */
-internal fun buildCloseRequestedScript(): String =
-    buildPostMessageScript(JSONObject().put("type", "closeRequested"))
+internal fun buildCloseRequestedScript(): String = buildPostMessageScript(JSONObject().put("type", "closeRequested"))
 
 /**
  * In a top-level WebView `window.parent === window`, so a message posted to the
  * page itself passes Link's "came from the host" check. Values are always
  * JSON-encoded by [JSONObject], never concatenated into the script.
  */
-private fun buildPostMessageScript(message: JSONObject): String =
-    "window.postMessage($message, '*');true;"
+private fun buildPostMessageScript(message: JSONObject): String = "window.postMessage($message, '*');true;"
