@@ -5,8 +5,11 @@
       LinkActivity is internal to the SDK: exported=false, so only the host app
       opens it (through LinkContract). configChanges keeps rotation and dark-mode
       changes from recreating the WebView and losing the session (§2.8, §5.3).
-      No runtime permissions are declared for v1 (§2.7).
+      No runtime permissions are declared for v1 (§2.7); INTERNET is a normal
+      install-time permission, needed to load the hosted Link page.
     -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application>
         <activity
             android:name="com.meshpay.link.internal.LinkActivity"
