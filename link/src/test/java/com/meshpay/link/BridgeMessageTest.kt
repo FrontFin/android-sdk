@@ -21,6 +21,7 @@ class BridgeMessageTest {
     fun `close with success status`() {
         val message = parseLinkMessage("""{"type":"close","payload":{"status":"success"}}""")
         assertEquals(LinkMessage.Close(LinkExitStatus.SUCCESS), message)
+        assertEquals(LinkExitStatus.SUCCESS, (message as LinkMessage.Close).status)
     }
 
     @Test

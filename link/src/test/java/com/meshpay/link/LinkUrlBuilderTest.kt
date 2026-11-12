@@ -20,6 +20,14 @@ import org.robolectric.annotation.Config
 @Config(manifest = Config.NONE)
 class LinkUrlBuilderTest {
     @Test
+    fun `origin is the scheme and host of the environment's Link URL`() {
+        val prod = buildLinkUrl("t", "c", LinkOptions(environment = LinkEnvironment.PROD), isSystemDark = false)
+        assertEquals("https://link.meshpay.com", prod.origin)
+        val sbx = buildLinkUrl("t", "c", LinkOptions(environment = LinkEnvironment.SBX), isSystemDark = false)
+        assertEquals("https://link.sbx.meshpay.com", sbx.origin)
+    }
+
+    @Test
     fun `matches the shared link-url vectors`() {
         val vectors = loadVectors("test-vectors/link-url.json")
         for (i in 0 until vectors.length()) {
