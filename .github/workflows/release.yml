@@ -141,7 +141,8 @@ jobs:
             echo "" >> notes.md
             echo "**Full changelog:** https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...${VERSION}" >> notes.md
           fi
-          gh release create "$VERSION" --target main --title "$VERSION" --notes-file notes.md
+          # Tag the commit this run built and published, not the moving `main`.
+          gh release create "$VERSION" --target "$GITHUB_SHA" --title "$VERSION" --notes-file notes.md
 
       - name: Slack announcement 📣
         if: ${{ env.SLACK_WEBHOOK_URL != '' }}
