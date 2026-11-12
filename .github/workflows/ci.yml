@@ -1,5 +1,6 @@
-# Runs on pull requests to main and on manual triggers. Same jobs and step order
-# as FrontFin/mesh-android-sdk's CI, with the names, paths and coordinates changed
+# Runs on pull requests to main, on manual triggers, and as a reusable workflow
+# called by release.yml before publishing. Same jobs and step order as
+# FrontFin/mesh-android-sdk's CI, with the names, paths and coordinates changed
 # for com.meshpay:link.
 name: CI
 
@@ -7,6 +8,7 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
