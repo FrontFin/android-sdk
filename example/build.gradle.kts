@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.meshpay.link.example"
+    namespace = "com.meshpay.android.example"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.meshpay.link.example"
+        applicationId = "com.meshpay.android.example"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

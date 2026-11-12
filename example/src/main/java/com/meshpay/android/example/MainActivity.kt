@@ -1,4 +1,4 @@
-package com.meshpay.link.example
+package com.meshpay.android.example
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
