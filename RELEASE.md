@@ -33,7 +33,6 @@ On merge, [`release.yml`](.github/workflows/release.yml) does the rest:
 | --- | --- |
 | `MAVEN_USERNAME`, `MAVEN_PASSWORD` | Central Portal publishing |
 | `SIGNING_KEY`, `SIGNING_PASSWORD` | In-memory artifact signing |
-| `SONAR_TOKEN` (+ `SONAR_*` variables) | SonarQube scan |
 | `SLACK_WEBHOOK_URL` | Release announcement |
 
 Maven Central also requires the `com.meshpay` namespace to be verified on the

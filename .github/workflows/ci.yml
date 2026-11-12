@@ -25,10 +25,6 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      # Exposed to `if:` below so SonarQube is skipped until the secret exists.
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -60,7 +56,3 @@ jobs:
 
       - name: Assemble release AAR 📦
         run: ./gradlew link:assembleRelease
-
-      - name: SonarQube scan
-        if: env.SONAR_TOKEN != ''
-        run: ./gradlew sonar

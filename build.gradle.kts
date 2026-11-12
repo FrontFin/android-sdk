@@ -9,15 +9,4 @@ plugins {
     alias(libs.plugins.maven.publish) apply false
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.detekt) apply false
-    alias(libs.plugins.sonarqube)
-}
-
-// One SonarQube project for the whole repo; the `link` module contributes its
-// coverage report. Server URL and keys come from CI variables/secrets.
-sonar {
-    properties {
-        property("sonar.projectKey", System.getenv("SONAR_PROJECT_KEY") ?: "FrontFin_android-sdk")
-        property("sonar.organization", System.getenv("SONAR_ORGANIZATION") ?: "")
-        property("sonar.host.url", System.getenv("SONAR_HOST_URL") ?: "")
-    }
 }
