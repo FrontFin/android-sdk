@@ -105,10 +105,14 @@ private fun externalAppDecision(
  *   → `metamask://wc?uri=x`
  */
 private fun intentDecision(url: String): NavigationDecision {
+    val prefix = "intent://"
     val marker = "#Intent;"
-    val fragmentIndex = url.indexOf(marker)
+    // Malformed forms such as `intent:#Intent;…` or `intent:/#Intent;…` have no
+    // `//` authority part; block them rather than slice out of range.
+    if (!url.startsWith(prefix, ignoreCase = true)) return NavigationDecision.Block
+    val fragmentIndex = url.indexOf(marker, startIndex = prefix.length)
     if (fragmentIndex == -1) return NavigationDecision.Block
-    val target = url.substring("intent://".length, fragmentIndex)
+    val target = url.substring(prefix.length, fragmentIndex)
     val fields = HashMap<String, String>()
     for (part in url.substring(fragmentIndex + marker.length).split(';')) {
         val separator = part.indexOf('=')

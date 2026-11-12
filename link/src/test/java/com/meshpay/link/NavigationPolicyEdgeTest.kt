@@ -24,6 +24,30 @@ class NavigationPolicyEdgeTest {
     }
 
     @Test
+    fun `intent without the double-slash prefix is blocked instead of crashing`() {
+        assertEquals(NavigationDecision.Block, decideNavigation("intent:#Intent;scheme=metamask;end", true, origin))
+        assertEquals(NavigationDecision.Block, decideNavigation("intent:/#Intent;scheme=metamask;end", true, origin))
+        assertEquals(NavigationDecision.Block, decideNavigation("intent:wc#Intent;scheme=metamask;end", true, origin))
+    }
+
+    @Test
+    fun `new window with a malformed intent url is blocked instead of crashing`() {
+        assertEquals(NavigationDecision.Block, decideNewWindow("intent:#Intent;scheme=metamask;end"))
+    }
+
+    @Test
+    fun `intent with an empty target before the fragment opens the bare scheme`() {
+        val decision = decideNavigation("intent://#Intent;scheme=metamask;end", true, origin)
+        assertEquals(NavigationDecision.OpenExternal("metamask://", null), decision)
+    }
+
+    @Test
+    fun `intent prefix is matched case-insensitively`() {
+        val decision = decideNavigation("INTENT://wc#Intent;scheme=metamask;end", true, origin)
+        assertEquals(NavigationDecision.OpenExternal("metamask://wc", null), decision)
+    }
+
+    @Test
     fun `launchable intent without a fallback opens the deep link`() {
         val decision = decideNavigation("intent://wc?uri=abc#Intent;scheme=metamask;end", true, origin)
         assertEquals(NavigationDecision.OpenExternal("metamask://wc?uri=abc", null), decision)
