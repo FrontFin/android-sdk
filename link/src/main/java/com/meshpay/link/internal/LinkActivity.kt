@@ -161,11 +161,6 @@ internal class LinkActivity : ComponentActivity() {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
             androidx.webkit.WebSettingsCompat.setSafeBrowsingEnabled(view.settings, true)
         }
-        // Remote debugging in a debuggable host app. The flag is process-wide, so
-        // never turn it off: that would override the host's own setting.
-        val debuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
-        if (debuggable) WebView.setWebContentsDebuggingEnabled(true)
-
         installBridge(view)
         installDocumentStartScript(view)
 

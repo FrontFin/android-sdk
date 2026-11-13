@@ -1,6 +1,8 @@
 package com.meshpay.android.example
 
+import android.content.pm.ApplicationInfo
 import android.os.Bundle
+import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -63,6 +65,8 @@ private val Surface = Color(0xFF1B1A1A)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // The SDK leaves WebView remote debugging to the host app; enable it for debug builds.
+        if ((applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) WebView.setWebContentsDebuggingEnabled(true)
         setContent {
             MaterialTheme(
                 colorScheme = darkColorScheme(
