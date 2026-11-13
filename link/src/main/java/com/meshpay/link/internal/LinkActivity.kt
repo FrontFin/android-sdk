@@ -58,7 +58,9 @@ internal class LinkActivity : ComponentActivity() {
     private val main = Handler(Looper.getMainLooper())
     private val loadTimeout =
         Runnable {
-            finishWith(LinkResult.Error(LinkError(LinkErrorCode.LOAD_TIMEOUT, "Link did not load in time.")))
+            // Same message as react-native-sdk.
+            val message = "Link did not load within ${LINK_LOAD_TIMEOUT_MS}ms."
+            finishWith(LinkResult.Error(LinkError(LinkErrorCode.LOAD_TIMEOUT, message)))
         }
     private val graceTimeout = Runnable { finishWith(LinkResult.Exit(LinkExitStatus.CANCELED)) }
     private val revealCloseButton = Runnable { closeButton.visibility = View.VISIBLE }
