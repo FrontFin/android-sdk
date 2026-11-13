@@ -3,7 +3,6 @@ package com.meshpay.link.internal
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -20,8 +19,6 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
-import android.widget.ImageButton
-import android.widget.ProgressBar
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.core.view.ViewCompat
@@ -52,8 +49,8 @@ internal class LinkActivity : ComponentActivity() {
 
     private lateinit var root: FrameLayout
     private var webView: WebView? = null
-    private lateinit var closeButton: ImageButton
-    private lateinit var loader: ProgressBar
+    private lateinit var closeButton: LinkCloseButton
+    private lateinit var loader: LinkLoader
 
     private val main = Handler(Looper.getMainLooper())
     private val loadTimeout =
@@ -173,13 +170,11 @@ internal class LinkActivity : ComponentActivity() {
         )
     }
 
+    /** The native ✕, drawn like react-native-sdk's `CloseButton`. Top-right, in the
+     *  same spot as Link's own header close, so it does not jump when Link loads. */
     private fun addCloseButton(dark: Boolean) {
         closeButton =
-            ImageButton(this).apply {
-                setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-                setColorFilter(if (dark) BACKGROUND_LIGHT else BACKGROUND_DARK)
-                background = null
-                contentDescription = getString(android.R.string.cancel)
+            LinkCloseButton(this, foregroundColor(dark)).apply {
                 visibility = View.GONE
                 setOnClickListener { requestClose() }
             }
@@ -188,22 +183,16 @@ internal class LinkActivity : ComponentActivity() {
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP or Gravity.START,
+                Gravity.TOP or Gravity.RIGHT,
             ),
         )
     }
 
-    /** A small centred spinner shown while Link loads, tinted like the close
-     *  button. It never blocks touches (a non-clickable view) and is shown only
+    /** A small centred spinning ring shown while Link loads, drawn like
+     *  react-native-sdk's `Loader`. It never blocks touches and is shown only
      *  before Link's `loaded`. */
     private fun addLoader(dark: Boolean) {
-        val foreground = if (dark) BACKGROUND_LIGHT else BACKGROUND_DARK
-        loader =
-            ProgressBar(this).apply {
-                isIndeterminate = true
-                indeterminateTintList = ColorStateList.valueOf(foreground)
-                visibility = View.GONE
-            }
+        loader = LinkLoader(this, foregroundColor(dark)).apply { visibility = View.GONE }
         root.addView(
             loader,
             FrameLayout.LayoutParams(
@@ -214,6 +203,8 @@ internal class LinkActivity : ComponentActivity() {
         )
     }
 
+    private fun foregroundColor(dark: Boolean): Int = if (dark) BACKGROUND_LIGHT else BACKGROUND_DARK
+
     private fun applyInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -223,9 +214,13 @@ internal class LinkActivity : ComponentActivity() {
                 leftMargin = bars.left
                 rightMargin = bars.right
             }
+            // 16 dp from the safe area's top-right corner, less the hit slop the
+            // view is padded with, so the drawn circle lands where RN's does.
+            val density = resources.displayMetrics.density
+            val offset = ((CLOSE_BUTTON_INSET_DP - CLOSE_BUTTON_HIT_SLOP_DP) * density).toInt()
             closeButton.updateLayoutParams<FrameLayout.LayoutParams> {
-                topMargin = bars.top
-                leftMargin = bars.left
+                topMargin = bars.top + offset
+                rightMargin = bars.right + offset
             }
             insets
         }
