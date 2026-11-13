@@ -208,9 +208,12 @@ internal class LinkActivity : ComponentActivity() {
     private fun applyInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            // Edge-to-edge turns off adjustResize on Android 11+, so shrink the
+            // WebView above the keyboard ourselves (as react-native-sdk's does).
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             webView?.updateLayoutParams<FrameLayout.LayoutParams> {
                 topMargin = bars.top
-                bottomMargin = bars.bottom
+                bottomMargin = maxOf(bars.bottom, ime.bottom)
                 leftMargin = bars.left
                 rightMargin = bars.right
             }
