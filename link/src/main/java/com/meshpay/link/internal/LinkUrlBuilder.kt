@@ -56,7 +56,7 @@ internal fun buildLinkUrl(
     val trimmedClientId = clientId.trim()
     require(trimmedClientId.isNotEmpty()) { "clientId is required." }
 
-    val base = LINK_URLS[options.environment] ?: LINK_URLS.getValue(LinkEnvironment.PROD)
+    val base = LINK_URLS.getValue(options.environment)
 
     val params =
         buildList {
@@ -69,7 +69,7 @@ internal fun buildLinkUrl(
         }
 
     val href = appendQuery(base, params)
-    // `base` is a constant or an origin-checked tunnel URL, so it always has one.
+    // `base` is one of the LINK_URLS constants, so it always has an origin.
     val origin = getOrigin(href)!!
     return BuiltLinkUrl(href, origin)
 }

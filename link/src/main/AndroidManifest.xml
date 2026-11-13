@@ -3,8 +3,10 @@
 
     <!--
       LinkActivity is internal to the SDK: exported=false, so only the host app
-      opens it (through LinkContract). configChanges keeps rotation and dark-mode
-      changes from recreating the WebView and losing the session (§2.8, §5.3).
+      opens it (through LinkContract). configChanges keeps rotation, dark-mode,
+      language, font-size and display-size changes (often made while the user is
+      away in a wallet app) from recreating the WebView and losing the session
+      (§2.8, §5.3).
       No runtime permissions are declared for v1 (§2.7); INTERNET is a normal
       install-time permission, needed to load the hosted Link page.
     -->
@@ -14,7 +16,7 @@
         <activity
             android:name="com.meshpay.link.internal.LinkActivity"
             android:exported="false"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|locale|layoutDirection|fontScale|density"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
     </application>
