@@ -49,6 +49,13 @@ internal class LinkActivity : ComponentActivity() {
 
     private lateinit var root: FrameLayout
     private var webView: WebView? = null
+
+    /**
+     * WebViews off screen and awaiting destruction: throwaway popups from
+     * `onCreateWindow` and a main WebView whose renderer died. Destroyed on the
+     * next main-loop turn (never inside their own callback) or in `onDestroy`.
+     */
+    private val orphans = mutableListOf<WebView>()
     private lateinit var closeButton: LinkCloseButton
     private lateinit var loader: LinkLoader
 
@@ -343,8 +350,11 @@ internal class LinkActivity : ComponentActivity() {
                 detail: RenderProcessGoneDetail,
             ): Boolean {
                 // MUST return true; returning false crashes the host app (§2.3).
+                // Detach now, destroy after this callback returns.
                 webView = null
-                view.destroy()
+                (view.parent as? android.view.ViewGroup)?.removeView(view)
+                orphans += view
+                destroyLater(view)
                 if (closing) {
                     finishWith(LinkResult.Exit(LinkExitStatus.CANCELED))
                 } else {
@@ -368,17 +378,46 @@ internal class LinkActivity : ComponentActivity() {
             ): Boolean {
                 // Read the target URL through a throwaway WebView and route it, so
                 // `window.open` / `target=_blank` reaches the wallet or browser (N4).
+                // A popup that never navigates (`window.open()` with no URL, or
+                // `about:blank` written to by script) is tracked so it is still
+                // destroyed in `onDestroy` and cannot outlive this Activity.
                 val popup = WebView(this@LinkActivity)
+                orphans += popup
                 popup.webViewClient =
                     object : WebViewClient() {
+                        private var routed = false
+
                         override fun shouldOverrideUrlLoading(
                             v: WebView,
                             request: WebResourceRequest,
                         ): Boolean {
+                            // Route only the first URL: a redirect can arrive
+                            // before the deferred destroy runs.
+                            if (routed) return true
+                            routed = true
                             val decision = decideNewWindow(request.url.toString())
                             if (decision is NavigationDecision.OpenExternal) launcher.open(decision)
-                            v.destroy()
+                            // Never destroy a WebView from inside its own callback.
+                            destroyLater(v)
                             return true
+                        }
+
+                        override fun onRenderProcessGone(
+                            v: WebView,
+                            detail: RenderProcessGoneDetail,
+                        ): Boolean {
+                            // The popup shares Link's renderer; the default `false`
+                            // would crash the host app (§2.3).
+                            destroyLater(v)
+                            return true
+                        }
+                    }
+                // `window.close()` from the popup lands on the popup's own chrome
+                // client; release it then instead of holding it until `onDestroy`.
+                popup.webChromeClient =
+                    object : WebChromeClient() {
+                        override fun onCloseWindow(window: WebView) {
+                            destroyLater(window)
                         }
                     }
                 (resultMsg.obj as WebView.WebViewTransport).webView = popup
@@ -467,11 +506,29 @@ internal class LinkActivity : ComponentActivity() {
         return mask == android.content.res.Configuration.UI_MODE_NIGHT_YES
     }
 
+    private fun destroyLater(view: WebView) {
+        main.post { if (orphans.remove(view)) destroyWebView(view) }
+    }
+
+    /** Detach before destroying: a WebView destroyed while attached can keep the Activity. */
+    private fun destroyWebView(view: WebView) {
+        (view.parent as? android.view.ViewGroup)?.removeView(view)
+        view.stopLoading()
+        view.webChromeClient = null
+        view.destroy()
+    }
+
     override fun onDestroy() {
+        // Any close still queued (host `close()` posted from another thread)
+        // becomes a no-op instead of scheduling work on a destroyed Activity.
+        done = true
         ActiveSession.unregister(closeRequester)
-        clearTimers()
-        webView?.destroy()
+        // Drops the named timers and every anonymous post (legacy bridge, orphans).
+        main.removeCallbacksAndMessages(null)
+        webView?.let { destroyWebView(it) }
         webView = null
+        orphans.forEach { destroyWebView(it) }
+        orphans.clear()
         super.onDestroy()
     }
 
