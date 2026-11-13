@@ -82,7 +82,7 @@ class MainActivity : ComponentActivity() {
 private fun LinkDemoScreen() {
     var clientId by remember { mutableStateOf("") }
     var token by remember { mutableStateOf("") }
-    var environment by remember { mutableStateOf(LinkEnvironment.PROD) }
+    var environment by remember { mutableStateOf<LinkEnvironment?>(null) }
     var theme by remember { mutableStateOf<LinkTheme?>(null) }
     var language by remember { mutableStateOf("") }
     var fiat by remember { mutableStateOf("") }
@@ -111,6 +111,7 @@ private fun LinkDemoScreen() {
             PickerField(
                 label = "Environment",
                 options = listOf(
+                    "Not set" to null,
                     "Sandbox" to LinkEnvironment.SBX,
                     "Production" to LinkEnvironment.PROD,
                     "Dev" to LinkEnvironment.DEV,
@@ -148,12 +149,14 @@ private fun LinkDemoScreen() {
                             token = token.trim(),
                             clientId = clientId.trim(),
                             options = LinkOptions(
-                                environment = environment,
                                 theme = theme,
                                 language = language.trim().ifBlank { null },
                                 integrationId = integrationId.trim().ifBlank { null },
                                 displayFiatCurrency = fiat.trim().ifBlank { null },
-                            ),
+                            ).let { options ->
+                                // "Not set" leaves the SDK default in place.
+                                environment?.let { options.copy(environment = it) } ?: options
+                            },
                         ),
                     )
                 },
@@ -248,7 +251,8 @@ private fun <T> PickerField(
     }
 }
 
-private fun environmentLabel(environment: LinkEnvironment): String = when (environment) {
+private fun environmentLabel(environment: LinkEnvironment?): String = when (environment) {
+    null -> "Not set"
     LinkEnvironment.SBX -> "Sandbox"
     LinkEnvironment.PROD -> "Production"
     LinkEnvironment.DEV -> "Dev"
