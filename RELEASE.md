@@ -17,23 +17,30 @@ Releasing is just:
 
 On merge, [`release.yml`](.github/workflows/release.yml) does the rest:
 
-- `check-version` — reads `meshpay-link` and the latest tag. Same version → no
-  release (ends green). Lower → fails (downgrade). Tag already exists → fails.
-- Validates that `CHANGELOG.md` has the matching `## X.Y.Z` section.
-- Re-runs the CI gates on the release commit.
+- `check-version` — reads `meshpay-link` and the latest `X.Y.Z` tag. Same
+  version → no release (ends green). Lower → fails (downgrade). Validates that
+  `CHANGELOG.md` has the matching `## X.Y.Z` section.
+- `ci` — re-runs the full PR CI (`ci.yml`) on the release commit.
 - `publish` — `./gradlew link:publishAndReleaseToMavenCentral` to the Central
-  Portal, signed in memory.
-- `release` — `gh release create X.Y.Z --target main` (this creates the tag),
-  with notes from the changelog section and a compare link.
-- Posts a Slack announcement.
+  Portal, signed in memory. Skipped on a re-run of the same workflow run when the
+  version is already on Maven Central; fails if another run published it.
+- `release` — `gh release create X.Y.Z --target <release commit>` (this creates
+  the tag), with notes from the changelog section and a compare link.
+- `notify` — posts the outcome (released, published but no GitHub release, or
+  which step failed) to Slack through `FrontFin/cicd-templates`'
+  `slack/post-message` action. A Slack failure never turns the release red; the run summary says whether it
+  posted.
 
-## Secrets
+## Secrets and variables
 
-| Secret | Used for |
-| --- | --- |
-| `MAVEN_USERNAME`, `MAVEN_PASSWORD` | Central Portal publishing |
-| `SIGNING_KEY`, `SIGNING_PASSWORD` | In-memory artifact signing |
-| `SLACK_WEBHOOK_URL` | Release announcement |
+| Name | Kind | Used for |
+| --- | --- | --- |
+| `MAVEN_USERNAME`, `MAVEN_PASSWORD` | secret | Central Portal publishing |
+| `SIGNING_KEY`, `SIGNING_PASSWORD` | secret | In-memory artifact signing |
+| `GH_ACTIONS_SLACK_APP_TOKEN` | secret | Slack bot token for the release post |
+| `RELEASE_SLACK_AUDIENCE` | variable | Where the release post goes; unset = no post (flagged in the run summary) |
+| `RELEASE_SUCCESS_MENTION` | variable | Optional space-separated Slack usergroup IDs (`S…`) pinged on success |
+| `RELEASE_FAILURE_MENTION` | variable | Optional space-separated Slack usergroup IDs (`S…`) pinged on failure |
 
 Maven Central also requires the `com.meshpay` namespace to be verified on the
 Central Portal (a DNS TXT record on `meshpay.com`).

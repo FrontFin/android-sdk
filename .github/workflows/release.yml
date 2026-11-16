@@ -1,12 +1,15 @@
-# Runs on every push to main and on manual triggers. Same model as the other Mesh
-# mobile SDKs (§2.11): the version in gradle/libs.versions.toml is the source of
-# truth. Releasing means running the bump-version skill, opening a PR and merging
-# it — nothing here is manual.
+# Runs on pushes to main and on manual triggers: detect a version bump in
+# gradle/libs.versions.toml against the latest tag (bare versions, e.g. 0.1.0),
+# validate the changelog, run the full CI (ci.yml, called as a reusable workflow),
+# publish to Maven Central, then create the GitHub release (which creates the tag)
+# and report the outcome on Slack. Releasing means running the bump-version skill,
+# opening a PR and merging it (§2.11).
 name: Release
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -14,97 +17,153 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 defaults:
   run:
     shell: bash
 
+env:
+  GROUP_ID: com.meshpay
+  ARTIFACT_ID: link
+
 jobs:
   check-version:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    if: github.ref == 'refs/heads/main'
     outputs:
-      should_release: ${{ steps.check.outputs.should_release }}
-      version: ${{ steps.check.outputs.version }}
-      previous_tag: ${{ steps.check.outputs.previous_tag }}
-      bump_type: ${{ steps.check.outputs.bump_type }}
+      new_version: ${{ steps.version_check.outputs.new_version }}
+      version: ${{ steps.version_check.outputs.version }}
+      previous_tag: ${{ steps.version_check.outputs.previous_tag }}
+
     steps:
+      # Only tag names and HEAD's files are needed, not history: a shallow clone
+      # with tags gives `git tag -l` the same answer as a full one.
       - name: Checkout 🛎️
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          fetch-tags: true
 
-      - name: Read version and compare to the latest tag
-        id: check
+      - name: Check if new version 🔍
+        id: version_check
         run: |
+          # No leading zeros, as semver requires: semver_gt compares with bash
+          # arithmetic, which reads 08 or 09 as invalid octal.
+          NUM='(0|[1-9][0-9]*)'
+          SEMVER_RE="^${NUM}\.${NUM}\.${NUM}$"
+
           VERSION=$(grep -E '^meshpay-link\s*=' gradle/libs.versions.toml | sed -E 's/.*"([^"]+)".*/\1/')
-          echo "Manifest version: $VERSION"
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Version '$VERSION' is not strict MAJOR.MINOR.PATCH"; exit 1
+          # Android tags are the bare version (0.1.0). Only release tags count:
+          # filtering by SEMVER_RE before taking the max keeps a prerelease
+          # (0.2.0-rc.1) or unrelated tag from blocking releases.
+          # `|| true`: grep exits 1 when there are no release tags yet.
+          LATEST_TAG=$(git tag -l --sort=-v:refname | grep -E "$SEMVER_RE" | head -n 1 || true)
+
+          if [[ ! "$VERSION" =~ $SEMVER_RE ]]; then
+            echo "::error::meshpay-link in gradle/libs.versions.toml must be MAJOR.MINOR.PATCH without leading zeros; got: ${VERSION:-<empty>}"
+            exit 1
           fi
 
-          LATEST=$(git tag --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
-          echo "Latest tag: ${LATEST:-<none>}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "previous_tag=$LATEST" >> "$GITHUB_OUTPUT"
+          semver_gt() {
+            # Returns 0 (true) if $1 is strictly greater than $2.
+            IFS='.' read -r A_MAJOR A_MINOR A_PATCH <<< "$1"
+            IFS='.' read -r B_MAJOR B_MINOR B_PATCH <<< "$2"
+            if [[ "$A_MAJOR" -gt "$B_MAJOR" ]]; then return 0; fi
+            if [[ "$A_MAJOR" -eq "$B_MAJOR" && "$A_MINOR" -gt "$B_MINOR" ]]; then return 0; fi
+            if [[ "$A_MAJOR" -eq "$B_MAJOR" && "$A_MINOR" -eq "$B_MINOR" && "$A_PATCH" -gt "$B_PATCH" ]]; then return 0; fi
+            return 1
+          }
 
-          if [[ -z "$LATEST" ]]; then
-            echo "should_release=true" >> "$GITHUB_OUTPUT"
-            echo "bump_type=Minor" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if [[ "$VERSION" == "$LATEST" ]]; then
-            echo "Version unchanged; nothing to release."
-            echo "should_release=false" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
-            echo "::error::Tag $VERSION already exists (accidental reuse)"; exit 1
-          fi
-          HIGHEST=$(printf '%s\n%s\n' "$VERSION" "$LATEST" | sort -V | tail -n1)
-          if [[ "$HIGHEST" != "$VERSION" ]]; then
-            echo "::error::Version $VERSION is lower than the latest tag $LATEST (downgrade)"; exit 1
+          echo "Current version in gradle/libs.versions.toml: $VERSION"
+          echo "Latest git tag: ${LATEST_TAG:-<none>}"
+
+          if [[ "$VERSION" == "$LATEST_TAG" ]]; then
+            echo "No new version detected — skipping release"
+            echo "new_version=false" >> "$GITHUB_OUTPUT"
+          elif [[ -n "$LATEST_TAG" ]] && ! semver_gt "$VERSION" "$LATEST_TAG"; then
+            echo "::error::meshpay-link ($VERSION) is not greater than the latest tag ($LATEST_TAG) — accidental downgrade?"
+            exit 1
+          else
+            echo "New version detected: $VERSION (previous: ${LATEST_TAG:-<none>})"
+            echo "new_version=true" >> "$GITHUB_OUTPUT"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "previous_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
           fi
 
-          IFS=. read -r nM nm np <<< "$VERSION"
-          IFS=. read -r oM om op <<< "$LATEST"
-          if [[ "$nM" != "$oM" ]]; then BUMP=Major; elif [[ "$nm" != "$om" ]]; then BUMP=Minor; else BUMP=Patch; fi
-          echo "bump_type=$BUMP" >> "$GITHUB_OUTPUT"
-          echo "should_release=true" >> "$GITHUB_OUTPUT"
-
-      - name: Validate changelog
-        if: steps.check.outputs.should_release == 'true'
+      - name: Validate changelog 📋
+        if: steps.version_check.outputs.new_version == 'true'
+        env:
+          VERSION: ${{ steps.version_check.outputs.version }}
         run: |
-          test -f CHANGELOG.md || { echo "::error::CHANGELOG.md is missing"; exit 1; }
-          grep -q "^## ${{ steps.check.outputs.version }}\b" CHANGELOG.md \
-            || { echo "::error::CHANGELOG.md has no '## ${{ steps.check.outputs.version }}' entry"; exit 1; }
+          if [ ! -f CHANGELOG.md ]; then
+            echo "::error::Missing CHANGELOG.md file."
+            exit 1
+          fi
+          if ! grep -Fxq "## ${VERSION}" CHANGELOG.md; then
+            echo "::error::No changelog entry found for version ${VERSION} in CHANGELOG.md"
+            exit 1
+          fi
+          echo "Changelog entry for ${VERSION} found ✓"
 
+  # The full PR CI (ci.yml), so a release is gated by exactly the checks a PR is.
   ci:
     needs: check-version
-    if: needs.check-version.outputs.should_release == 'true'
+    if: needs.check-version.outputs.new_version == 'true'
+    permissions:
+      contents: read
     uses: ./.github/workflows/ci.yml
-    secrets: inherit
 
+  # Kept apart from CI so the Maven Central and signing secrets are never held
+  # while the test and lint tasks run.
   publish:
     needs: [check-version, ci]
-    if: needs.check-version.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ needs.check-version.outputs.version }}
+
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      # Makes a re-run safe when a previous attempt published but failed before
+      # the GitHub release: Maven Central versions are immutable, so publishing
+      # again would fail. Central records no source commit, so the
+      # skip is limited to a re-run of this same workflow run, which builds the
+      # same commit. A fresh run (a later merge that kept the version) fails here
+      # instead of tagging code that isn't on Maven Central.
+      - name: Check if version is already on Maven Central 🔎
+        id: published
+        run: |
+          POM_URL="https://repo1.maven.org/maven2/${GROUP_ID//.//}/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-${VERSION}.pom"
+          if ! curl -sfI "$POM_URL" > /dev/null; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_RUN_ATTEMPT" -gt 1 ]]; then
+            echo "${GROUP_ID}:${ARTIFACT_ID}:${VERSION} is already on Maven Central from an earlier attempt of this run — skipping publish"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::${GROUP_ID}:${ARTIFACT_ID}:${VERSION} is already on Maven Central, published by another run. Tag its commit as ${VERSION} and create its GitHub release by hand, or bump the version."
+            exit 1
+          fi
+
       - name: Set up JDK 21 ☕
+        if: steps.published.outputs.exists != 'true'
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Set up Gradle 🐘
+        if: steps.published.outputs.exists != 'true'
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
 
       # Central Portal, signed in memory (SIGNING_KEY is an ASCII-armored key).
       - name: Publish to Maven Central 🚀
+        if: steps.published.outputs.exists != 'true'
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_PASSWORD }}
@@ -114,51 +173,190 @@ jobs:
 
   release:
     needs: [check-version, publish]
-    if: needs.check-version.outputs.should_release == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     permissions:
       contents: write
+    env:
+      VERSION: ${{ needs.check-version.outputs.version }}
+      PREV_TAG: ${{ needs.check-version.outputs.previous_tag }}
+
     steps:
+      # Shallow is enough: this job only reads CHANGELOG.md, and gh needs just the
+      # .git remote. --target and the compare URL resolve on GitHub's side.
       - name: Checkout 🛎️
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          fetch-depth: 0
 
-      - name: Create GitHub Release (creates the tag) 🏷️
+      # Creates the bare-version tag on the commit that was built and published,
+      # not on whatever main points at by the time this job runs.
+      - name: Create GitHub Release 🏷️
         env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.check-version.outputs.version }}
-          PREVIOUS_TAG: ${{ needs.check-version.outputs.previous_tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Release notes = this version's CHANGELOG section.
-          awk -v v="## $VERSION" '
-            $0 ~ "^"v"($|[^0-9.])" {grab=1; next}
-            grab && /^## [0-9]/ {exit}
-            grab {print}
-          ' CHANGELOG.md > notes.md
-          if [[ -n "$PREVIOUS_TAG" ]]; then
-            echo "" >> notes.md
-            echo "**Full changelog:** https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...${VERSION}" >> notes.md
-          fi
-          # Tag the commit this run built and published, not the moving `main`.
-          gh release create "$VERSION" --target "$GITHUB_SHA" --title "$VERSION" --notes-file notes.md
+          TAG="${VERSION}"
+          CHANGELOG_SECTION=$(awk -v version="$VERSION" '$0 == "## " version {found=1; next} found && /^## /{exit} found{print}' CHANGELOG.md)
 
-      - name: Slack announcement 📣
-        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
+          {
+            echo "## What's Changed"
+            echo
+            echo "${CHANGELOG_SECTION}"
+            if [[ -n "$PREV_TAG" ]]; then
+              echo
+              echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
+            fi
+          } > "$RUNNER_TEMP/release_notes.md"
+
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file "$RUNNER_TEMP/release_notes.md" \
+            --target "$GITHUB_SHA"
+
+  # Posts the release outcome (success or failure) to Slack via the shared
+  # FrontFin/cicd-templates post-message action (bot-token based). Runs whenever a release
+  # was attempted — a new version was detected, or the version/changelog check
+  # itself failed — and never on a plain push without a version bump. The
+  # audience-var check lives in the Slack-post step so the summary step still runs
+  # when the var is unset, surfacing the misconfiguration on the workflow-run page
+  # instead of dropping it.
+  notify:
+    name: Notify Slack
+    needs: [check-version, ci, publish, release]
+    if: ${{ always() && (needs.check-version.outputs.new_version == 'true' || needs.check-version.result == 'failure') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # No checkout / no GITHUB_TOKEN use — it only posts to Slack via the bot
+    # token. Grant nothing.
+    permissions: {}
+    steps:
+      - name: Build the Slack message
+        id: message
+        # Composes the full message (success OR failure) so the post step below
+        # has no duplicated success/failure condition. Line 1 = status + version +
+        # links; line 2 = the RELEASE_SUCCESS_MENTION or RELEASE_FAILURE_MENTION
+        # groups; last line = a Slack blockquote with the PR title + a clickable
+        # #NN, taken from the push event's head-commit subject (squash merges read
+        # "<title> (#NN)"). head_commit is null on workflow_dispatch, so the
+        # blockquote is dropped there.
+        #
+        # continue-on-error: a hiccup here must never turn a green release red. If
+        # this script exits non-zero the output is empty, the post step's own input
+        # check fails, ITS continue-on-error catches it, and the summary reports
+        # "did NOT post".
+        #
+        # HEAD_COMMIT_MSG is passed via env and never interpolated into the
+        # script, so a crafted commit message can't inject shell.
+        if: ${{ always() && vars.RELEASE_SLACK_AUDIENCE != '' }}
+        continue-on-error: true
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2
+          HEAD_COMMIT_MSG: ${{ github.event.head_commit.message }}
+          VERSION: ${{ needs.check-version.outputs.version }}
+          CHECK_RESULT: ${{ needs.check-version.result }}
+          CI_RESULT: ${{ needs.ci.result }}
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+          RELEASE_RESULT: ${{ needs.release.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          # Space-separated Slack usergroup IDs (S…) to ping when the release goes
+          # red, and when it succeeds. Repo vars, so the audience changes without a
+          # PR. Optional — unset means no mention; malformed IDs are skipped.
+          FAILURE_MENTION: ${{ vars.RELEASE_FAILURE_MENTION }}
+          SUCCESS_MENTION: ${{ vars.RELEASE_SUCCESS_MENTION }}
+        run: |
+          # First line only = the commit subject.
+          NL=$'\n'
+          SUBJECT=${HEAD_COMMIT_MSG%%"$NL"*}
+          # Sanitize for Slack mrkdwn: escape & < > (& FIRST, else it double-
+          # escapes the entities below) and drop backticks (an odd count would
+          # open an unterminated code span that swallows the rest of the message).
+          # sed, not ${TITLE//&/&amp;}: from bash 5.2 an unquoted & in a pattern
+          # substitution's replacement expands to the matched text.
+          TITLE=$(printf '%s' "$SUBJECT" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e 's/`//g')
+          # Pull the trailing (#NN) squash-merge ref and turn it into a link. The
+          # link markup (< >) is ours, built AFTER sanitization so it isn't escaped.
+          PR_NUM=$(printf '%s' "$SUBJECT" | grep -oE '\(#[0-9]+\)$' | tr -dc '0-9' || true)
+          if [[ -n "$PR_NUM" ]]; then
+            TITLE=${TITLE% (#"$PR_NUM")}
+            PR_LINE="${TITLE} <${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/pull/${PR_NUM}|#${PR_NUM}>"
+          else
+            PR_LINE="$TITLE"
+          fi
+
+          # VERSION is empty when the version/changelog check itself failed.
+          NAME="MeshPay Link Android SDK${VERSION:+ ${VERSION}}"
+          MAVEN_URL="https://central.sonatype.com/artifact/${GROUP_ID}/${ARTIFACT_ID}/${VERSION}"
+          RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${VERSION}"
+          FAILED=true
+          if [[ "$RELEASE_RESULT" == "success" ]]; then
+            FAILED=false
+            MSG=":white_check_mark: *${NAME} released* — <${MAVEN_URL}|Maven Central> · <${RELEASE_URL}|GitHub release> · <${RUN_URL}|workflow run>"
+          elif [[ "$PUBLISH_RESULT" == "success" ]]; then
+            # Maven Central versions are immutable: the artifact is out, only the
+            # tag and GitHub release are missing. Re-running the workflow skips the
+            # publish.
+            MSG=":warning: *${NAME} published to Maven Central, but the GitHub release failed* — re-run the workflow to create the tag and release · <${MAVEN_URL}|Maven Central> · <${RUN_URL}|workflow run>"
+          elif [[ "$CHECK_RESULT" != "success" ]]; then
+            MSG=":x: *${NAME} release ${CHECK_RESULT/failure/failed} at the version/changelog check* — <${RUN_URL}|workflow run>"
+          elif [[ "$CI_RESULT" != "success" ]]; then
+            MSG=":x: *${NAME} release ${CI_RESULT/failure/failed} at the CI checks* — <${RUN_URL}|workflow run>"
+          else
+            MSG=":x: *${NAME} release ${PUBLISH_RESULT/failure/failed} at the Maven Central publish* — <${RUN_URL}|workflow run>"
+          fi
+          # Line 2: ping the success or failure groups. Bots must use <!subteam^ID> — a plain @handle doesn't
+          # notify. Each ID is validated so a bad var value can't inject other markup.
+          if [[ "$FAILED" == "true" ]]; then
+            IDS=$FAILURE_MENTION
+          else
+            IDS=$SUCCESS_MENTION
+          fi
+          MENTIONS=""
+          for ID in $IDS; do
+            if [[ "$ID" =~ ^S[A-Z0-9]+$ ]]; then
+              MENTIONS="${MENTIONS:+${MENTIONS} }<!subteam^${ID}>"
+            fi
+          done
+          if [[ -n "$MENTIONS" ]]; then
+            MSG="${MSG}${NL}${MENTIONS}"
+          fi
+          # Last line: Slack blockquote with the PR title whenever we have a subject.
+          if [[ -n "$PR_LINE" ]]; then
+            MSG="${MSG}${NL}> ${PR_LINE}"
+          fi
+          {
+            echo "message<<__MSG_EOF__"
+            printf '%s\n' "$MSG"
+            echo "__MSG_EOF__"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post release result to Slack 📣
+        id: post
+        # Self-skips when the audience var is unset (records `skipped` as the
+        # outcome, which the summary step below flags). continue-on-error covers
+        # the outage / token-fail path so a Slack hiccup can't flip a release red.
+        if: ${{ always() && vars.RELEASE_SLACK_AUDIENCE != '' }}
+        continue-on-error: true
+        uses: FrontFin/cicd-templates/actions/slack/post-message@9726773f3f5b33936db89d2a81d22695b043df97
         with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            blocks:
-              - type: header
-                text:
-                  type: plain_text
-                  text: ":android: Android SDK Release: ${{ needs.check-version.outputs.version }}"
-              - type: section
-                text:
-                  type: mrkdwn
-                  text: "*Bump:* ${{ needs.check-version.outputs.bump_type }}  •  <!subteam^S091246FEDR>  •  <https://github.com/${{ github.repository }}/releases/tag/${{ needs.check-version.outputs.version }}|Release notes>"
+          token: ${{ secrets.GH_ACTIONS_SLACK_APP_TOKEN }}
+          audience: ${{ vars.RELEASE_SLACK_AUDIENCE }}
+          message: ${{ steps.message.outputs.message }}
+
+      - name: Record Slack post outcome in the release summary
+        # `steps.post.outcome` is `success` (posted), `failure` (Slack outage,
+        # expired token) or `skipped` (audience var unset), each mapped to its own
+        # summary line so a misconfig and an outage are distinguishable.
+        if: always()
+        env:
+          OUTCOME: ${{ steps.post.outcome }}
+        run: |
+          case "$OUTCOME" in
+            success)
+              echo "- Slack notify: :white_check_mark: posted" >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            skipped)
+              echo "::warning::Slack notify did NOT post — \`RELEASE_SLACK_AUDIENCE\` repo variable is unset."
+              echo "- Slack notify: :warning: did NOT post — \`RELEASE_SLACK_AUDIENCE\` repo variable is unset." >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            *)
+              echo "::warning::Slack notify did NOT post (outcome=${OUTCOME}). Token or upstream Slack API likely at fault."
+              echo "- Slack notify: :warning: did NOT post (outcome=\`${OUTCOME}\`) — check \`GH_ACTIONS_SLACK_APP_TOKEN\` or Slack status." >> "$GITHUB_STEP_SUMMARY"
+              ;;
+          esac
