@@ -64,7 +64,9 @@ kotlin {
 
 dependencies {
     implementation(libs.androidx.webkit)
-    implementation(libs.androidx.activity)
+    // `api`, not `implementation`: the public LinkContract extends
+    // ActivityResultContract, so consumers need Activity on their compile classpath.
+    api(libs.androidx.activity)
     implementation(libs.androidx.core)
 
     testImplementation(libs.junit)
