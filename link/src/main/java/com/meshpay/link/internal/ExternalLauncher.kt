@@ -1,6 +1,5 @@
 package com.meshpay.link.internal
 
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
@@ -9,16 +8,18 @@ import androidx.core.net.toUri
  * Hands a URL to the OS — the wallet app for a custom scheme, the app or browser
  * for `https`. Uses `ACTION_VIEW` + `CATEGORY_BROWSABLE` with no `resolveActivity`
  * check (which is package-visibility filtered on Android 11+ and answers false
- * for wallets the host manifest does not list, ONC-447), catching
- * `ActivityNotFoundException` and falling back when there is a fallback URL.
+ * for wallets the host manifest does not list, ONC-447), and falls back when
+ * there is a fallback URL.
+ *
+ * The URL is chosen by web content, so a failed launch must never escape into
+ * the WebView callback and crash the host app (SR-6, PRG-2290).
  */
 internal class ExternalLauncher(private val context: Context) {
-    fun open(decision: NavigationDecision.OpenExternal) {
-        if (!launch(decision.url)) {
-            decision.fallbackUrl?.let { launch(it) }
-        }
-    }
+    /** @return `true` when the primary or the fallback URL was handed to the OS. */
+    fun open(decision: NavigationDecision.OpenExternal): Boolean =
+        launch(decision.url) || decision.fallbackUrl?.let { launch(it) } == true
 
+    @Suppress("TooGenericExceptionCaught", "SwallowedException")
     private fun launch(url: String): Boolean =
         try {
             val intent =
@@ -28,9 +29,12 @@ internal class ExternalLauncher(private val context: Context) {
                 }
             context.startActivity(intent)
             true
-        } catch (_: ActivityNotFoundException) {
-            // Nothing handles it; the caller tries the fallback, else the user stays
-            // on the Link page.
+        } catch (_: RuntimeException) {
+            // ActivityNotFoundException (nothing handles it), SecurityException (the
+            // handler is not exported or needs a permission), or a RuntimeException
+            // wrapping TransactionTooLargeException. All mean "not opened": the
+            // caller tries the fallback, else the user stays on the Link page. The
+            // URL is never logged (§2.7).
             false
         }
 }

@@ -38,6 +38,14 @@ private val ALLOWED_ABOUT_PAGES = setOf("about:blank", "about:srcdoc")
 private val PLAIN_SCHEME = Regex("^[a-z][a-z0-9+.-]*$", RegexOption.IGNORE_CASE)
 
 /**
+ * Longest URL handed to the OS (SR-6, PRG-2290). The URL travels in an Intent
+ * over Binder, so an unbounded one can fail with TransactionTooLargeException.
+ * 32 KiB is far above real wallet deep links (WalletConnect URIs and signed
+ * payloads stay in the low kilobytes) and far below the Binder buffer.
+ */
+internal const val MAX_EXTERNAL_URL_LENGTH: Int = 32 * 1024
+
+/**
  * Where a WebView navigation request goes (solution design §2.6, vectors N1–N8).
  *
  * - The session's own Link origin loads in the WebView; any other `https` page in
@@ -64,7 +72,7 @@ internal fun decideNavigation(
         return if (!isMainFrame || getOrigin(url) == linkOrigin) {
             NavigationDecision.Load
         } else {
-            NavigationDecision.OpenExternal(url)
+            openExternal(url)
         }
     }
     return externalAppDecision(url, scheme)
@@ -80,7 +88,7 @@ internal fun decideNewWindow(url: String): NavigationDecision {
     if (scheme == null || scheme in BLOCKED_SCHEMES || scheme == "about") {
         return NavigationDecision.Block
     }
-    if (scheme == "https") return NavigationDecision.OpenExternal(url)
+    if (scheme == "https") return openExternal(url)
     return externalAppDecision(url, scheme)
 }
 
@@ -88,12 +96,19 @@ private fun externalAppDecision(
     url: String,
     scheme: String,
 ): NavigationDecision {
+    // Checked on the raw URL, so an over-long `intent://` is blocked before it is
+    // parsed, whatever deep link or fallback it would yield.
+    if (url.length > MAX_EXTERNAL_URL_LENGTH) return NavigationDecision.Block
     if (scheme == "intent") return intentDecision(url)
     // Deliberately not gated on `resolveActivity` / package visibility: on
     // Android 11+ it answers false for wallets the host manifest does not list
     // (legacy bug ONC-447).
     return NavigationDecision.OpenExternal(url)
 }
+
+/** An external `https` URL, or [NavigationDecision.Block] when it is too long. */
+private fun openExternal(url: String): NavigationDecision =
+    if (url.length > MAX_EXTERNAL_URL_LENGTH) NavigationDecision.Block else NavigationDecision.OpenExternal(url)
 
 /**
  * Android `intent://` URL → the plain deep link it describes, plus its

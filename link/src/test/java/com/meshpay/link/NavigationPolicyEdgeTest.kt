@@ -1,5 +1,6 @@
 package com.meshpay.link
 
+import com.meshpay.link.internal.MAX_EXTERNAL_URL_LENGTH
 import com.meshpay.link.internal.NavigationDecision
 import com.meshpay.link.internal.decideNavigation
 import com.meshpay.link.internal.decideNewWindow
@@ -94,5 +95,64 @@ class NavigationPolicyEdgeTest {
     fun `new window routes intent urls through the intent parser`() {
         val decision = decideNewWindow("intent://wc#Intent;scheme=metamask;end")
         assertEquals(NavigationDecision.OpenExternal("metamask://wc", null), decision)
+    }
+
+    // --- Length bound on URLs handed to the OS (SR-6, PRG-2290) ---------------
+
+    /** [prefix] padded with `a` to exactly [length] characters. */
+    private fun urlOfLength(
+        prefix: String,
+        length: Int,
+        suffix: String = "",
+    ): String = prefix + "a".repeat(length - prefix.length - suffix.length) + suffix
+
+    private val intentSuffix = "#Intent;scheme=metamask;end"
+
+    @Test
+    fun `over-long custom-scheme url is blocked`() {
+        val url = urlOfLength("metamask://wc?uri=", MAX_EXTERNAL_URL_LENGTH + 1)
+        assertEquals(NavigationDecision.Block, decideNavigation(url, true, origin))
+        assertEquals(NavigationDecision.Block, decideNavigation(url, false, origin))
+        assertEquals(NavigationDecision.Block, decideNewWindow(url))
+    }
+
+    @Test
+    fun `over-long intent url is blocked`() {
+        val url = urlOfLength("intent://wc?uri=", MAX_EXTERNAL_URL_LENGTH + 1, intentSuffix)
+        assertEquals(NavigationDecision.Block, decideNavigation(url, true, origin))
+        assertEquals(NavigationDecision.Block, decideNewWindow(url))
+    }
+
+    @Test
+    fun `over-long external https url is blocked`() {
+        val url = urlOfLength("https://coinbase.com/?q=", MAX_EXTERNAL_URL_LENGTH + 1)
+        assertEquals(NavigationDecision.Block, decideNavigation(url, true, origin))
+        assertEquals(NavigationDecision.Block, decideNewWindow(url))
+    }
+
+    @Test
+    fun `urls at the limit still open externally`() {
+        val custom = urlOfLength("metamask://wc?uri=", MAX_EXTERNAL_URL_LENGTH)
+        assertEquals(NavigationDecision.OpenExternal(custom), decideNavigation(custom, true, origin))
+        assertEquals(NavigationDecision.OpenExternal(custom), decideNewWindow(custom))
+
+        val https = urlOfLength("https://coinbase.com/?q=", MAX_EXTERNAL_URL_LENGTH)
+        assertEquals(NavigationDecision.OpenExternal(https), decideNavigation(https, true, origin))
+        assertEquals(NavigationDecision.OpenExternal(https), decideNewWindow(https))
+
+        val intent = urlOfLength("intent://wc?uri=", MAX_EXTERNAL_URL_LENGTH, intentSuffix)
+        val target = intent.removePrefix("intent://").removeSuffix(intentSuffix)
+        assertEquals(
+            NavigationDecision.OpenExternal("metamask://$target", null),
+            decideNavigation(intent, true, origin),
+        )
+    }
+
+    @Test
+    fun `the length bound does not apply to Link's own pages or subframes`() {
+        val linkPage = urlOfLength("$origin/?q=", MAX_EXTERNAL_URL_LENGTH + 1)
+        assertEquals(NavigationDecision.Load, decideNavigation(linkPage, true, origin))
+        val iframe = urlOfLength("https://captcha.example.com/?q=", MAX_EXTERNAL_URL_LENGTH + 1)
+        assertEquals(NavigationDecision.Load, decideNavigation(iframe, false, origin))
     }
 }
