@@ -123,47 +123,22 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
-    env:
-      VERSION: ${{ needs.check-version.outputs.version }}
 
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      # Makes a re-run safe when a previous attempt published but failed before
-      # the GitHub release: Maven Central versions are immutable, so publishing
-      # again would fail. Central records no source commit, so the
-      # skip is limited to a re-run of this same workflow run, which builds the
-      # same commit. A fresh run (a later merge that kept the version) fails here
-      # instead of tagging code that isn't on Maven Central.
-      - name: Check if version is already on Maven Central 🔎
-        id: published
-        run: |
-          POM_URL="https://repo1.maven.org/maven2/${GROUP_ID//.//}/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-${VERSION}.pom"
-          if ! curl -sfI "$POM_URL" > /dev/null; then
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          elif [[ "$GITHUB_RUN_ATTEMPT" -gt 1 ]]; then
-            echo "${GROUP_ID}:${ARTIFACT_ID}:${VERSION} is already on Maven Central from an earlier attempt of this run — skipping publish"
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::error::${GROUP_ID}:${ARTIFACT_ID}:${VERSION} is already on Maven Central, published by another run. Tag its commit as ${VERSION} and create its GitHub release by hand, or bump the version."
-            exit 1
-          fi
-
       - name: Set up JDK 21 ☕
-        if: steps.published.outputs.exists != 'true'
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Set up Gradle 🐘
-        if: steps.published.outputs.exists != 'true'
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
 
       # Central Portal, signed in memory (SIGNING_KEY is an ASCII-armored key).
       - name: Publish to Maven Central 🚀
-        if: steps.published.outputs.exists != 'true'
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_PASSWORD }}
@@ -290,9 +265,9 @@ jobs:
             MSG=":white_check_mark: *${NAME} released* — <${MAVEN_URL}|Maven Central> · <${RELEASE_URL}|GitHub release> · <${RUN_URL}|workflow run>"
           elif [[ "$PUBLISH_RESULT" == "success" ]]; then
             # Maven Central versions are immutable: the artifact is out, only the
-            # tag and GitHub release are missing. Re-running the workflow skips the
-            # publish.
-            MSG=":warning: *${NAME} published to Maven Central, but the GitHub release failed* — re-run the workflow to create the tag and release · <${MAVEN_URL}|Maven Central> · <${RUN_URL}|workflow run>"
+            # tag and GitHub release are missing. "Re-run failed jobs" re-runs
+            # only the release job; re-running all jobs would publish again and fail.
+            MSG=":warning: *${NAME} published to Maven Central, but the GitHub release failed* — re-run failed jobs to create the tag and release · <${MAVEN_URL}|Maven Central> · <${RUN_URL}|workflow run>"
           elif [[ "$CHECK_RESULT" != "success" ]]; then
             MSG=":x: *${NAME} release ${CHECK_RESULT/failure/failed} at the version/changelog check* — <${RUN_URL}|workflow run>"
           elif [[ "$CI_RESULT" != "success" ]]; then

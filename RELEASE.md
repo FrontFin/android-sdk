@@ -22,8 +22,9 @@ On merge, [`release.yml`](.github/workflows/release.yml) does the rest:
   `CHANGELOG.md` has the matching `## X.Y.Z` section.
 - `ci` — re-runs the full PR CI (`ci.yml`) on the release commit.
 - `publish` — `./gradlew link:publishAndReleaseToMavenCentral` to the Central
-  Portal, signed in memory. Skipped on a re-run of the same workflow run when the
-  version is already on Maven Central; fails if another run published it.
+  Portal, signed in memory. Maven Central versions are immutable, so if the
+  GitHub release fails after publishing, use **Re-run failed jobs** (not all
+  jobs) to create the tag and release without publishing again.
 - `release` — `gh release create X.Y.Z --target <release commit>` (this creates
   the tag), with notes from the changelog section and a compare link.
 - `notify` — posts the outcome (released, published but no GitHub release, or
