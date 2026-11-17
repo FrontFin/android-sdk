@@ -182,7 +182,12 @@ internal class LinkActivity : ComponentActivity() {
     }
 
     /** The native ✕, drawn like react-native-sdk's `CloseButton`. Top-right, in the
-     *  same spot as Link's own header close, so it does not jump when Link loads. */
+     *  same spot as Link's own header close, so it does not jump when Link loads.
+     *
+     *  `RIGHT`, not `END`, on purpose: Link's header close stays top-right in every
+     *  locale, and `applyInsets` sets `rightMargin` to match. `END` would move the
+     *  ✕ to the left in RTL with no inset on that side. */
+    @SuppressLint("RtlHardcoded")
     private fun addCloseButton(dark: Boolean) {
         closeButton =
             LinkCloseButton(this, foregroundColor(dark)).apply {
@@ -194,7 +199,7 @@ internal class LinkActivity : ComponentActivity() {
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP or Gravity.END,
+                Gravity.TOP or Gravity.RIGHT,
             ),
         )
     }
