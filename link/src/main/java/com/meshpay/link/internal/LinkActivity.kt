@@ -3,6 +3,7 @@ package com.meshpay.link.internal
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -74,6 +75,13 @@ internal class LinkActivity : ComponentActivity() {
     private var closing = false
     private var loaded = false
     private var navigationFailed = false
+
+    /**
+     * Set once a foreign document reached the main frame (PRG-2294). From then
+     * on nothing that page does — navigations, popups, deep links — leaves the
+     * SDK, even at the moment before the WebView is destroyed.
+     */
+    private var contained = false
 
     private val closeRequester = { requestClose() }
 
@@ -186,7 +194,7 @@ internal class LinkActivity : ComponentActivity() {
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP or Gravity.RIGHT,
+                Gravity.TOP or Gravity.END,
             ),
         )
     }
@@ -310,10 +318,31 @@ internal class LinkActivity : ComponentActivity() {
                 view: WebView,
                 request: WebResourceRequest,
             ): Boolean {
+                if (contained) return true
                 val decision = decideNavigation(request.url.toString(), request.isForMainFrame, built.origin)
                 if (decision is NavigationDecision.OpenExternal) launcher.open(decision)
                 // Return true to cancel; only `Load` proceeds in the WebView.
                 return decision !is NavigationDecision.Load
+            }
+
+            // Second origin gate. Called once per main-frame document, POST
+            // included, which `shouldOverrideUrlLoading` never sees.
+            override fun onPageStarted(
+                view: WebView,
+                url: String,
+                favicon: Bitmap?,
+            ) {
+                enforceMainFrameOrigin(view, url)
+            }
+
+            // Also checked on every history change, so the gate does not rest on
+            // a single callback.
+            override fun doUpdateVisitedHistory(
+                view: WebView,
+                url: String,
+                isReload: Boolean,
+            ) {
+                enforceMainFrameOrigin(view, url)
             }
 
             override fun onPageFinished(
@@ -372,6 +401,7 @@ internal class LinkActivity : ComponentActivity() {
                 isUserGesture: Boolean,
                 resultMsg: android.os.Message,
             ): Boolean {
+                if (contained) return false
                 // Read the target URL through a throwaway WebView and route it, so
                 // `window.open` / `target=_blank` reaches the wallet or browser (N4).
                 // A popup that never navigates (`window.open()` with no URL, or
@@ -392,7 +422,7 @@ internal class LinkActivity : ComponentActivity() {
                             if (routed) return true
                             routed = true
                             val decision = decideNewWindow(request.url.toString())
-                            if (decision is NavigationDecision.OpenExternal) launcher.open(decision)
+                            if (decision is NavigationDecision.OpenExternal && !contained) launcher.open(decision)
                             // Never destroy a WebView from inside its own callback.
                             destroyLater(v)
                             return true
@@ -423,6 +453,31 @@ internal class LinkActivity : ComponentActivity() {
 
             override fun onConsoleMessage(message: ConsoleMessage): Boolean = true
         }
+
+    /**
+     * Ends the session when a document outside the Link origin is in the main
+     * frame. The WebView is detached at once, so the page is never shown, and
+     * destroyed after this callback returns.
+     */
+    private fun enforceMainFrameOrigin(
+        view: WebView,
+        url: String,
+    ) {
+        if (contained || !isForeignTopFrameDocument(url, built.origin)) return
+        contained = true
+        view.stopLoading()
+        if (view === webView) {
+            webView = null
+            (view.parent as? android.view.ViewGroup)?.removeView(view)
+            orphans += view
+            destroyLater(view)
+        }
+        finishWith(
+            LinkResult.Error(
+                LinkError(LinkErrorCode.SESSION_INTERRUPTED, "Link navigated to a page outside its origin."),
+            ),
+        )
+    }
 
     private fun onMainFrameLoadFailed() {
         if (loaded && !closing) {
