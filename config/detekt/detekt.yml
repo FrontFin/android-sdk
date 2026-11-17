@@ -1,0 +1,28 @@
+# Detekt config for com.meshpay:link. Builds on the default rules; a few are
+# tuned for a small WebView-hosting SDK where one Activity legitimately wires up
+# several callbacks.
+complexity:
+  TooManyFunctions:
+    thresholdInClasses: 25
+    thresholdInFiles: 25
+  LongMethod:
+    threshold: 80
+  CyclomaticComplexMethod:
+    threshold: 20
+
+style:
+  MaxLineLength:
+    maxLineLength: 120
+  ReturnCount:
+    max: 6
+
+naming:
+  FunctionNaming:
+    # Factory-style internal helpers (e.g. Close(...)) read better capitalised.
+    functionPattern: '[a-zA-Z][a-zA-Z0-9]*'
+  MatchingDeclarationName:
+    # The solution design (§5.1) mandates descriptive file names that group a
+    # type with its related top-level functions (BridgeMessage.kt → LinkMessage,
+    # NavigationPolicy.kt → NavigationDecision), so the file name deliberately
+    # does not match the single type.
+    active: false

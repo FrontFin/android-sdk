@@ -1,0 +1,56 @@
+[versions]
+# The published SDK version. `BuildConfig.SDK_VERSION` is generated from this
+# entry and sent to Link as `meshSdkVersion`; it is never hand-written anywhere
+# else. The release workflow reads this same key (§2.11, §2.12).
+meshpay-link = "0.1.0"
+
+agp = "8.7.3"
+kotlin = "2.0.21"
+
+# Runtime dependencies of the core artifact. androidx.webkit, androidx.activity
+# and androidx.core only — no Compose in `com.meshpay:link` (§5.1).
+androidx-activity = "1.9.3"
+androidx-core = "1.15.0"
+androidx-webkit = "1.12.1"
+
+# Test + tooling
+androidx-activity-compose = "1.9.3"
+compose-bom = "2024.09.03"
+
+junit = "4.13.2"
+robolectric = "4.14.1"
+androidx-test-core = "1.6.1"
+androidx-test-ext-junit = "1.2.1"
+androidx-test-espresso = "3.6.1"
+
+# Gradle plugins
+mavenPublish = "0.30.0"
+ktlint = "12.1.1"
+detekt = "1.23.7"
+
+[libraries]
+androidx-activity = { module = "androidx.activity:activity-ktx", version.ref = "androidx-activity" }
+androidx-core = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "androidx-webkit" }
+
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity-compose" }
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+compose-material3 = { module = "androidx.compose.material3:material3" }
+
+junit = { module = "junit:junit", version.ref = "junit" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-ext-junit" }
+androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-test-espresso" }
+
+[plugins]
+android-library = { id = "com.android.library", version.ref = "agp" }
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
