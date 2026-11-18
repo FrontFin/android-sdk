@@ -18,6 +18,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `LinkConfiguration.toString()` no longer includes the token
 - `LinkErrorCode`, `LinkExitStatus`, `LinkEnvironment` and `LinkTheme` may gain values in minor releases; handle unknown ones with `else`
 
+### Security
+- A page from another origin can no longer stay full screen inside Link.
+
 ## 0.1.0
 
 ### Added

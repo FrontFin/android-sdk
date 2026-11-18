@@ -18,9 +18,11 @@ public enum class LinkErrorCode(public val value: String) {
     LOAD_TIMEOUT("load-timeout"),
 
     /**
-     * The WebView renderer died, or the host process was killed mid-session, and
-     * Link cannot resume. The session token is single-use, so the SDK does not
-     * blindly reload a spent token.
+     * The session ended before Link finished and cannot resume: the WebView
+     * renderer died, the host process was killed mid-session, or a page from
+     * another origin reached the Link window (the SDK closes Link rather than
+     * show it). The session token is single-use, so the SDK does not blindly
+     * reload a spent token.
      */
     SESSION_INTERRUPTED("session-interrupted"),
 }
