@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 - Back no longer ends Link after 1 s when Link opens its exit prompt. On a loaded Link the SDK asks it to close and waits for its answer.
+- A second Back within 2 s of the one that asked a loaded Link to close closes Link at once.
+- Back closes Link at once before it loads or after a page fails to load, instead of after 1 s or going back through the WebView history first.
 
 ## 0.1.0
 

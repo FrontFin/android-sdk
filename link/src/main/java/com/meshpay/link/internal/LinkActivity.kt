@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
 import android.webkit.ConsoleMessage
@@ -47,12 +48,11 @@ internal class LinkActivity : ComponentActivity() {
     private lateinit var config: LinkConfiguration
     private lateinit var built: BuiltLinkUrl
     private lateinit var launcher: ExternalLauncher
-
     private lateinit var root: FrameLayout
     private var webView: WebView? = null
 
     /**
-     * WebViews off screen and awaiting destruction: throwaway popups from
+     * WebViews off-screen and awaiting destruction: throwaway popups from
      * `onCreateWindow` and a main WebView whose renderer died. Destroyed on the
      * next main-loop turn (never inside their own callback) or in `onDestroy`.
      */
@@ -67,7 +67,7 @@ internal class LinkActivity : ComponentActivity() {
             val message = "Link did not load within ${LINK_LOAD_TIMEOUT_MS}ms."
             finishWith(LinkResult.Error(LinkError(LinkErrorCode.LOAD_TIMEOUT, message)))
         }
-    private val graceTimeout = Runnable { finishWith(LinkResult.Exit(LinkExitStatus.CANCELED)) }
+    private val graceTimeout = Runnable { cancel() }
     private val revealCloseButton = Runnable { closeButton.visibility = View.VISIBLE }
     private val revealLoader = Runnable { loader.visibility = View.VISIBLE }
 
@@ -75,6 +75,12 @@ internal class LinkActivity : ComponentActivity() {
     private var closing = false
     private var loaded = false
     private var navigationFailed = false
+
+    /** The Link main frame finished loading; covers Link builds that never post `loaded`. */
+    private var pageFinished = false
+
+    /** Uptime of the last Back that asked a loaded Link to close; `null` if none. */
+    private var lastCloseRequestBackAt: Long? = null
 
     private val closeRequester = { requestClose() }
 
@@ -324,7 +330,10 @@ internal class LinkActivity : ComponentActivity() {
             ) {
                 // Fallback for Link builds that never post `loaded`: the main-frame
                 // page finished, so stop the load timer.
-                if (getOrigin(url) == built.origin) main.removeCallbacks(loadTimeout)
+                if (getOrigin(url) == built.origin) {
+                    pageFinished = true
+                    main.removeCallbacks(loadTimeout)
+                }
             }
 
             override fun onReceivedError(
@@ -354,7 +363,7 @@ internal class LinkActivity : ComponentActivity() {
                 orphans += view
                 destroyLater(view)
                 if (closing) {
-                    finishWith(LinkResult.Exit(LinkExitStatus.CANCELED))
+                    cancel()
                 } else {
                     finishWith(
                         LinkResult.Error(
@@ -439,7 +448,7 @@ internal class LinkActivity : ComponentActivity() {
 
     private fun onPreLoadFailure() {
         if (closing) {
-            finishWith(LinkResult.Exit(LinkExitStatus.CANCELED))
+            cancel()
         } else {
             finishWith(LinkResult.Error(LinkError(LinkErrorCode.LOAD_ERROR, "The Link page failed to load.")))
         }
@@ -462,21 +471,40 @@ internal class LinkActivity : ComponentActivity() {
         main.postDelayed(graceTimeout, CLOSE_GRACE_MS)
     }
 
+    /** Link has loaded and its page has not failed, so it can answer a close request. */
+    private val linkReady: Boolean
+        get() = (loaded || pageFinished) && !navigationFailed
+
     private val backCallback =
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val view = webView
-                val linkAnswers = loaded && !navigationFailed && !closing
                 when {
-                    view != null && view.canGoBack() && !closing -> view.goBack()
-                    // A loaded Link decides for itself (it may open an exit prompt), so no
-                    // force-close timer runs. Before it loads, or on a failed page, the grace
-                    // timer still applies.
-                    view != null && linkAnswers -> view.evaluateJavascript(buildCloseRequestedScript(), null)
-                    else -> requestClose()
+                    // Nothing can answer Back: close at once.
+                    view == null || !linkReady -> cancel()
+                    // A close is under way: Link's own `close` (which may report SUCCESS)
+                    // or the grace timer ends it.
+                    closing -> Unit
+                    view.canGoBack() -> view.goBack()
+                    // A second Back within the window is the way out when Link does not
+                    // answer, or when the user does not want its exit prompt.
+                    withinBackExitWindow() -> cancel()
+                    else -> {
+                        // Link decides for itself (it may open an exit prompt), so no
+                        // force-close timer runs.
+                        lastCloseRequestBackAt = SystemClock.uptimeMillis()
+                        view.evaluateJavascript(buildCloseRequestedScript(), null)
+                    }
                 }
             }
         }
+
+    private fun withinBackExitWindow(): Boolean {
+        val last = lastCloseRequestBackAt ?: return false
+        return SystemClock.uptimeMillis() - last < BACK_EXIT_WINDOW_MS
+    }
+
+    private fun cancel() = finishWith(LinkResult.Exit(LinkExitStatus.CANCELED))
 
     private fun finishWith(result: LinkResult) {
         if (done) return
