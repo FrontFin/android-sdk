@@ -153,11 +153,11 @@ private fun LinkDemoScreen() {
                             token = token.trim(),
                             clientId = clientId.trim(),
                             options = LinkOptions {
-                                this.environment = environment // null defaults to PROD
-                                this.theme = theme
-                                this.language = language.trim().ifBlank { null }
-                                this.integrationId = integrationId.trim().ifBlank { null }
-                                displayFiatCurrency = fiat.trim().ifBlank { null }
+                                environment(environment) // null defaults to PROD
+                                theme(theme)
+                                language(language.trim().ifBlank { null })
+                                integrationId(integrationId.trim().ifBlank { null })
+                                displayFiatCurrency(fiat.trim().ifBlank { null })
                             },
                         ),
                     )

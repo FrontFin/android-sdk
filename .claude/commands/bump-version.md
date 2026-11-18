@@ -73,7 +73,7 @@ Analyse the diff against the public API (apply the highest matching level):
 - `minSdk` is raised
 
 #### MINOR — any of (and no MAJOR):
-- A new option or field: a new property on `LinkOptions.Builder` (and a getter on
+- A new option or field: a new function on `LinkOptions.Builder` (and a getter on
   `LinkOptions`), or a new constructor overload on `LinkConfiguration`,
   `LinkError`, `LinkResult.Exit` or `LinkResult.Error` that keeps the existing
   ones. `link.api` only gains lines.

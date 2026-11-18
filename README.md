@@ -39,9 +39,9 @@ linkLauncher.launch(
         token = sessionToken,
         clientId = clientId,
         options = LinkOptions {
-            environment = LinkEnvironment.PROD
-            theme = LinkTheme.SYSTEM
-            language = "en"
+            environment(LinkEnvironment.PROD)
+            theme(LinkTheme.SYSTEM)
+            language("en")
         },
     ),
 )
@@ -61,13 +61,13 @@ The result is delivered **exactly once** and survives host Activity recreation.
 
 ### `LinkOptions`
 
-Build options with `LinkOptions { … }` and set only what you need; anything you
-don't set stays unset:
+Build options with `LinkOptions { … }` and call only the options you need;
+anything you don't set stays unset:
 
 ```kotlin
 val options = LinkOptions {
-    environment = LinkEnvironment.SBX
-    displayFiatCurrency = "DKK"
+    environment(LinkEnvironment.SBX)
+    displayFiatCurrency("DKK")
 }
 ```
 

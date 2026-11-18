@@ -33,12 +33,12 @@ public enum class LinkTheme {
  *
  * ```kotlin
  * val options = LinkOptions {
- *     environment = LinkEnvironment.SBX
- *     theme = LinkTheme.SYSTEM
+ *     environment(LinkEnvironment.SBX)
+ *     theme(LinkTheme.SYSTEM)
  * }
  * ```
  *
- * The constructor is not public: a new option is a new [Builder] property, so
+ * The constructor is not public: a new option is a new [Builder] function, so
  * options can be added in minor releases without breaking apps or libraries
  * already built against an older version.
  *
@@ -56,22 +56,46 @@ public class LinkOptions internal constructor(
     public val integrationId: String?,
     public val displayFiatCurrency: String?,
 ) : Parcelable {
-    /** Receiver of the [LinkOptions] builder function. Every property starts unset (`null`). */
+    /**
+     * Receiver of the [LinkOptions] builder function. Every option starts unset
+     * (`null`); call a function to set it.
+     *
+     * Options are set with functions, not assignable properties, on purpose:
+     * inside the block, `environment = environment` would silently assign a
+     * same-named local variable to itself, while `environment(environment)`
+     * always reaches the builder.
+     */
     public class Builder internal constructor() {
+        private var environment: LinkEnvironment? = null
+        private var language: String? = null
+        private var theme: LinkTheme? = null
+        private var integrationId: String? = null
+        private var displayFiatCurrency: String? = null
+
         /** Which hosted deployment to open. `null` opens [LinkEnvironment.PROD]. */
-        public var environment: LinkEnvironment? = null
+        public fun environment(value: LinkEnvironment?) {
+            environment = value
+        }
 
         /** UI language as a locale code (e.g. `"es"`). */
-        public var language: String? = null
+        public fun language(value: String?) {
+            language = value
+        }
 
         /** How Link is themed. [LinkTheme.SYSTEM] follows the device appearance. */
-        public var theme: LinkTheme? = null
+        public fun theme(value: LinkTheme?) {
+            theme = value
+        }
 
         /** Pre-selects a wallet integration. */
-        public var integrationId: String? = null
+        public fun integrationId(value: String?) {
+            integrationId = value
+        }
 
         /** ISO 4217 code (e.g. `"DKK"`) for the currency Link shows. */
-        public var displayFiatCurrency: String? = null
+        public fun displayFiatCurrency(value: String?) {
+            displayFiatCurrency = value
+        }
 
         internal fun build(): LinkOptions =
             LinkOptions(
@@ -107,8 +131,8 @@ public fun LinkOptions(): LinkOptions = LinkOptions.Builder().build()
  *
  * ```kotlin
  * LinkOptions {
- *     environment = LinkEnvironment.SBX
- *     language = "es"
+ *     environment(LinkEnvironment.SBX)
+ *     language("es")
  * }
  * ```
  */

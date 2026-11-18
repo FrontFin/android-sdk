@@ -13,7 +13,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * The hand-written value semantics of the public input types, which are plain
+ * The handwritten value semantics of the public input types, which are plain
  * classes (not data classes) so they can grow in 1.x without breaking callers.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -33,10 +33,17 @@ class PublicApiTest {
 
     @Test
     fun `builder sets only the options given`() {
-        val sbx = LinkOptions { environment = LinkEnvironment.SBX }
+        val sbx = LinkOptions { environment(LinkEnvironment.SBX) }
         assertEquals(LinkEnvironment.SBX, sbx.environment)
         assertEquals(null, sbx.theme)
         assertEquals(LinkOptions(), LinkOptions { })
+    }
+
+    @Test
+    fun `builder is not shadowed by a same-named local variable`() {
+        val environment: LinkEnvironment = LinkEnvironment.SBX
+        val options = LinkOptions { environment(environment) }
+        assertEquals(LinkEnvironment.SBX, options.environment)
     }
 
     @Test
@@ -159,11 +166,11 @@ class PublicApiTest {
         displayFiatCurrency: String?,
     ): LinkOptions =
         LinkOptions {
-            this.environment = environment
-            this.language = language
-            this.theme = theme
-            this.integrationId = integrationId
-            this.displayFiatCurrency = displayFiatCurrency
+            environment(environment)
+            language(language)
+            theme(theme)
+            integrationId(integrationId)
+            displayFiatCurrency(displayFiatCurrency)
         }
 
     private fun <T : Parcelable> roundTrip(

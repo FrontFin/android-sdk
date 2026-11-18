@@ -8,7 +8,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 - `LinkSdk.VERSION` with the SDK version
-- `LinkOptions { … }` builder, e.g. `LinkOptions { environment = LinkEnvironment.SBX }`
+- `LinkOptions { … }` builder, e.g. `LinkOptions { environment(LinkEnvironment.SBX) }`
 
 ### Changed
 - Public API is locked and checked in CI (`link/api/link.api`)

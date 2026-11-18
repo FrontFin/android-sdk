@@ -45,9 +45,9 @@ test-vectors/                          link-url.json, navigation.json (shared ac
   file. Public types are plain classes, not data classes (no `copy`/`componentN`
   to break), and public constructors have no default arguments (no hidden
   `DefaultConstructorMarker` constructor). A new option is a new
-  `LinkOptions.Builder` property; a new field on `LinkConfiguration`, `LinkError`,
-  `LinkResult.Exit` or `LinkResult.Error` is a new constructor overload, keeping
-  the existing ones.
+  `LinkOptions.Builder` function (not a `var`); a new field on
+  `LinkConfiguration`, `LinkError`, `LinkResult.Exit` or `LinkResult.Error` is a
+  new constructor overload, keeping the existing ones.
   `LinkErrorCode`/`LinkExitStatus`/`LinkEnvironment`/`LinkTheme` may gain values
   in 1.x; `LinkResult` stays `Exit` | `Error`.
 

@@ -96,16 +96,11 @@ public final class com/meshpay/link/LinkOptions : android/os/Parcelable {
 }
 
 public final class com/meshpay/link/LinkOptions$Builder {
-	public final fun getDisplayFiatCurrency ()Ljava/lang/String;
-	public final fun getEnvironment ()Lcom/meshpay/link/LinkEnvironment;
-	public final fun getIntegrationId ()Ljava/lang/String;
-	public final fun getLanguage ()Ljava/lang/String;
-	public final fun getTheme ()Lcom/meshpay/link/LinkTheme;
-	public final fun setDisplayFiatCurrency (Ljava/lang/String;)V
-	public final fun setEnvironment (Lcom/meshpay/link/LinkEnvironment;)V
-	public final fun setIntegrationId (Ljava/lang/String;)V
-	public final fun setLanguage (Ljava/lang/String;)V
-	public final fun setTheme (Lcom/meshpay/link/LinkTheme;)V
+	public final fun displayFiatCurrency (Ljava/lang/String;)V
+	public final fun environment (Lcom/meshpay/link/LinkEnvironment;)V
+	public final fun integrationId (Ljava/lang/String;)V
+	public final fun language (Ljava/lang/String;)V
+	public final fun theme (Lcom/meshpay/link/LinkTheme;)V
 }
 
 public final class com/meshpay/link/LinkOptions$Creator : android/os/Parcelable$Creator {
