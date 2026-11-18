@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -22,6 +21,7 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.core.content.IntentCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -598,20 +598,12 @@ internal class LinkActivity : ComponentActivity() {
 
         fun resultFrom(intent: Intent?): LinkResult? = intent?.let { intentResult(it) }
 
+        // IntentCompat picks the right framework call per API level, and skips the
+        // typed overload on API 33, where it has a framework bug.
         private fun intentConfig(intent: Intent): LinkConfiguration? =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent.getParcelableExtra(EXTRA_CONFIG, LinkConfiguration::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                intent.getParcelableExtra(EXTRA_CONFIG)
-            }
+            IntentCompat.getParcelableExtra(intent, EXTRA_CONFIG, LinkConfiguration::class.java)
 
         private fun intentResult(intent: Intent): LinkResult? =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent.getParcelableExtra(EXTRA_RESULT, LinkResult::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                intent.getParcelableExtra(EXTRA_RESULT)
-            }
+            IntentCompat.getParcelableExtra(intent, EXTRA_RESULT, LinkResult::class.java)
     }
 }
