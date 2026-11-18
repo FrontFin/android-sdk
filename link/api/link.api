@@ -40,10 +40,6 @@ public final class com/meshpay/link/LinkEnvironment : java/lang/Enum {
 public final class com/meshpay/link/LinkError : android/os/Parcelable {
 	public static final field CREATOR Landroid/os/Parcelable$Creator;
 	public fun <init> (Lcom/meshpay/link/LinkErrorCode;Ljava/lang/String;)V
-	public final fun component1 ()Lcom/meshpay/link/LinkErrorCode;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Lcom/meshpay/link/LinkErrorCode;Ljava/lang/String;)Lcom/meshpay/link/LinkError;
-	public static synthetic fun copy$default (Lcom/meshpay/link/LinkError;Lcom/meshpay/link/LinkErrorCode;Ljava/lang/String;ILjava/lang/Object;)Lcom/meshpay/link/LinkError;
 	public final fun describeContents ()I
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCode ()Lcom/meshpay/link/LinkErrorCode;
@@ -131,9 +127,6 @@ public abstract interface class com/meshpay/link/LinkResult : android/os/Parcela
 public final class com/meshpay/link/LinkResult$Error : com/meshpay/link/LinkResult {
 	public static final field CREATOR Landroid/os/Parcelable$Creator;
 	public fun <init> (Lcom/meshpay/link/LinkError;)V
-	public final fun component1 ()Lcom/meshpay/link/LinkError;
-	public final fun copy (Lcom/meshpay/link/LinkError;)Lcom/meshpay/link/LinkResult$Error;
-	public static synthetic fun copy$default (Lcom/meshpay/link/LinkResult$Error;Lcom/meshpay/link/LinkError;ILjava/lang/Object;)Lcom/meshpay/link/LinkResult$Error;
 	public final fun describeContents ()I
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getError ()Lcom/meshpay/link/LinkError;
@@ -153,9 +146,6 @@ public final class com/meshpay/link/LinkResult$Error$Creator : android/os/Parcel
 public final class com/meshpay/link/LinkResult$Exit : com/meshpay/link/LinkResult {
 	public static final field CREATOR Landroid/os/Parcelable$Creator;
 	public fun <init> (Lcom/meshpay/link/LinkExitStatus;)V
-	public final fun component1 ()Lcom/meshpay/link/LinkExitStatus;
-	public final fun copy (Lcom/meshpay/link/LinkExitStatus;)Lcom/meshpay/link/LinkResult$Exit;
-	public static synthetic fun copy$default (Lcom/meshpay/link/LinkResult$Exit;Lcom/meshpay/link/LinkExitStatus;ILjava/lang/Object;)Lcom/meshpay/link/LinkResult$Exit;
 	public final fun describeContents ()I
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getStatus ()Lcom/meshpay/link/LinkExitStatus;

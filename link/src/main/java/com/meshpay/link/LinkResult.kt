@@ -33,11 +33,33 @@ public enum class LinkExitStatus(public val value: String) {
  * the same session.
  */
 public sealed interface LinkResult : Parcelable {
-    /** The session ended normally. */
+    /**
+     * The session ended normally.
+     *
+     * A plain class, not a `data class`, so a field can be added in a minor
+     * release without breaking apps or libraries already built against this one.
+     */
     @Parcelize
-    public data class Exit(public val status: LinkExitStatus) : LinkResult
+    public class Exit(public val status: LinkExitStatus) : LinkResult {
+        override fun equals(other: Any?): Boolean = this === other || other is Exit && status == other.status
 
-    /** Link could not be shown or could not continue. */
+        override fun hashCode(): Int = status.hashCode()
+
+        override fun toString(): String = "Exit(status=$status)"
+    }
+
+    /**
+     * Link could not be shown or could not continue.
+     *
+     * A plain class, not a `data class`, so a field can be added in a minor
+     * release without breaking apps or libraries already built against this one.
+     */
     @Parcelize
-    public data class Error(public val error: LinkError) : LinkResult
+    public class Error(public val error: LinkError) : LinkResult {
+        override fun equals(other: Any?): Boolean = this === other || other is Error && error == other.error
+
+        override fun hashCode(): Int = error.hashCode()
+
+        override fun toString(): String = "Error(error=$error)"
+    }
 }

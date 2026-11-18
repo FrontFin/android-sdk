@@ -103,6 +103,48 @@ class PublicApiTest {
     }
 
     @Test
+    fun `LinkError equal by value`() {
+        val error = LinkError(LinkErrorCode.LOAD_ERROR, "token is required.")
+        val same = LinkError(LinkErrorCode.LOAD_ERROR, "token is required.")
+        assertEquals(error, error)
+        assertEquals(error, same)
+        assertEquals(error.hashCode(), same.hashCode())
+        assertNotEquals(error, null)
+        assertNotEquals(error, "not an error")
+        assertNotEquals(error, LinkError(LinkErrorCode.LOAD_TIMEOUT, "token is required."))
+        assertNotEquals(error, LinkError(LinkErrorCode.LOAD_ERROR, "clientId is required."))
+        assertEquals("LinkError(code=LOAD_ERROR, message=token is required.)", error.toString())
+    }
+
+    @Test
+    fun `LinkResult outcomes equal by value`() {
+        val exit = LinkResult.Exit(LinkExitStatus.SUCCESS)
+        assertEquals(exit, exit)
+        assertEquals(exit, LinkResult.Exit(LinkExitStatus.SUCCESS))
+        assertEquals(exit.hashCode(), LinkResult.Exit(LinkExitStatus.SUCCESS).hashCode())
+        assertNotEquals(exit, LinkResult.Exit(LinkExitStatus.CANCELED))
+        assertNotEquals(exit, null)
+        assertEquals("Exit(status=SUCCESS)", exit.toString())
+
+        val error = LinkResult.Error(LinkError(LinkErrorCode.LOAD_TIMEOUT, "timeout"))
+        assertEquals(error, error)
+        assertEquals(error, LinkResult.Error(LinkError(LinkErrorCode.LOAD_TIMEOUT, "timeout")))
+        assertEquals(error.hashCode(), LinkResult.Error(LinkError(LinkErrorCode.LOAD_TIMEOUT, "timeout")).hashCode())
+        assertNotEquals(error, LinkResult.Error(LinkError(LinkErrorCode.LOAD_ERROR, "timeout")))
+        assertFalse(error.equals(exit))
+        assertNotEquals(error, null)
+        assertEquals("Error(error=LinkError(code=LOAD_TIMEOUT, message=timeout))", error.toString())
+    }
+
+    @Test
+    fun `output types survive a Parcel round trip`() {
+        val exit = LinkResult.Exit(LinkExitStatus.CANCELED)
+        val error = LinkResult.Error(LinkError(LinkErrorCode.SESSION_INTERRUPTED, "gone"))
+        assertEquals(exit, roundTrip(exit, parcelableCreator<LinkResult.Exit>()))
+        assertEquals(error, roundTrip(error, parcelableCreator<LinkResult.Error>()))
+    }
+
+    @Test
     fun `LinkSdk VERSION is the build version`() {
         assertEquals(BuildConfig.SDK_VERSION, LinkSdk.VERSION)
         assertTrue(Regex("""\d+\.\d+\.\d+""").matches(LinkSdk.VERSION))

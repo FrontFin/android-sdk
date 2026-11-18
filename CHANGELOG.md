@@ -12,7 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 - Public API is locked and checked in CI (`link/api/link.api`)
-- `LinkOptions` and `LinkConfiguration` are no longer data classes: no `copy()` or destructuring
+- `LinkOptions`, `LinkConfiguration`, `LinkError`, `LinkResult.Exit` and `LinkResult.Error` are no longer data classes: no `copy()` or destructuring
 - `LinkOptions` is created only with `LinkOptions { … }` or `LinkOptions()`; its constructor is no longer public
 - `LinkOptions.environment` defaults to `null`, which still opens `PROD`
 - `LinkConfiguration.toString()` no longer includes the token
