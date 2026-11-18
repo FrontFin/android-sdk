@@ -588,8 +588,8 @@ internal class LinkActivity : ComponentActivity() {
     }
 
     internal companion object {
-        private const val EXTRA_CONFIG = "com.meshpay.link.CONFIG"
-        private const val EXTRA_RESULT = "com.meshpay.link.RESULT"
+        const val EXTRA_CONFIG = "com.meshpay.link.CONFIG"
+        const val EXTRA_RESULT = "com.meshpay.link.RESULT"
 
         fun newIntent(
             context: Context,
