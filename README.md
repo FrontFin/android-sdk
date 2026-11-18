@@ -66,9 +66,19 @@ anything you don't set stays unset:
 
 ```kotlin
 val options = LinkOptions {
-    environment(LinkEnvironment.SBX)
-    displayFiatCurrency("DKK")
+    language("es")
+    theme(LinkTheme.DARK)
+    displayFiatCurrency("EUR")
 }
+```
+
+From Java, use `LinkOptions.Builder`:
+
+```java
+LinkOptions options = new LinkOptions.Builder()
+    .environment(LinkEnvironment.SBX)
+    .displayFiatCurrency("DKK")
+    .build();
 ```
 
 | Option | Type | Default | Notes |

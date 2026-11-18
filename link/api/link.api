@@ -96,11 +96,13 @@ public final class com/meshpay/link/LinkOptions : android/os/Parcelable {
 }
 
 public final class com/meshpay/link/LinkOptions$Builder {
-	public final fun displayFiatCurrency (Ljava/lang/String;)V
-	public final fun environment (Lcom/meshpay/link/LinkEnvironment;)V
-	public final fun integrationId (Ljava/lang/String;)V
-	public final fun language (Ljava/lang/String;)V
-	public final fun theme (Lcom/meshpay/link/LinkTheme;)V
+	public fun <init> ()V
+	public final fun build ()Lcom/meshpay/link/LinkOptions;
+	public final fun displayFiatCurrency (Ljava/lang/String;)Lcom/meshpay/link/LinkOptions$Builder;
+	public final fun environment (Lcom/meshpay/link/LinkEnvironment;)Lcom/meshpay/link/LinkOptions$Builder;
+	public final fun integrationId (Ljava/lang/String;)Lcom/meshpay/link/LinkOptions$Builder;
+	public final fun language (Ljava/lang/String;)Lcom/meshpay/link/LinkOptions$Builder;
+	public final fun theme (Lcom/meshpay/link/LinkTheme;)Lcom/meshpay/link/LinkOptions$Builder;
 }
 
 public final class com/meshpay/link/LinkOptions$Creator : android/os/Parcelable$Creator {
@@ -112,8 +114,8 @@ public final class com/meshpay/link/LinkOptions$Creator : android/os/Parcelable$
 }
 
 public final class com/meshpay/link/LinkOptionsKt {
-	public static final fun LinkOptions ()Lcom/meshpay/link/LinkOptions;
-	public static final fun LinkOptions (Lkotlin/jvm/functions/Function1;)Lcom/meshpay/link/LinkOptions;
+	public static final synthetic fun LinkOptions ()Lcom/meshpay/link/LinkOptions;
+	public static final synthetic fun LinkOptions (Lkotlin/jvm/functions/Function1;)Lcom/meshpay/link/LinkOptions;
 }
 
 public abstract interface class com/meshpay/link/LinkResult : android/os/Parcelable {

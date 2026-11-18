@@ -9,11 +9,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 - `LinkSdk.VERSION` with the SDK version
 - `LinkOptions { … }` builder, e.g. `LinkOptions { environment(LinkEnvironment.SBX) }`
+- `LinkOptions.Builder` for Java, e.g. `new LinkOptions.Builder().environment(LinkEnvironment.SBX).build()`
 
 ### Changed
 - Public API is locked and checked in CI (`link/api/link.api`)
 - `LinkOptions`, `LinkConfiguration`, `LinkError`, `LinkResult.Exit` and `LinkResult.Error` are no longer data classes: no `copy()` or destructuring
-- `LinkOptions` is created only with `LinkOptions { … }` or `LinkOptions()`; its constructor is no longer public
+- `LinkOptions` is created only with `LinkOptions { … }`, `LinkOptions()` or `LinkOptions.Builder`; its constructor is no longer public
 - `LinkOptions.environment` defaults to `null`, which still opens `PROD`
 - `LinkConfiguration.toString()` no longer includes the token
 - `LinkErrorCode`, `LinkExitStatus`, `LinkEnvironment` and `LinkTheme` may gain values in minor releases; handle unknown ones with `else`

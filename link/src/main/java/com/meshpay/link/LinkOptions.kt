@@ -29,13 +29,23 @@ public enum class LinkTheme {
 
 /**
  * Optional Link settings. Every field is optional and defaults to `null` (unset).
- * Create one with the [LinkOptions] builder function:
+ *
+ * From Kotlin, create one with the [LinkOptions] builder function:
  *
  * ```kotlin
  * val options = LinkOptions {
  *     environment(LinkEnvironment.SBX)
  *     theme(LinkTheme.SYSTEM)
  * }
+ * ```
+ *
+ * From Java, use [Builder]:
+ *
+ * ```java
+ * LinkOptions options = new LinkOptions.Builder()
+ *     .environment(LinkEnvironment.SBX)
+ *     .theme(LinkTheme.SYSTEM)
+ *     .build();
  * ```
  *
  * The constructor is not public: a new option is a new [Builder] function, so
@@ -57,15 +67,16 @@ public class LinkOptions internal constructor(
     public val displayFiatCurrency: String?,
 ) : Parcelable {
     /**
-     * Receiver of the [LinkOptions] builder function. Every option starts unset
-     * (`null`); call a function to set it.
+     * Builds [LinkOptions]. Every option starts unset (`null`); call a function to
+     * set it. Each function returns the builder, so calls chain from Java; in the
+     * Kotlin `LinkOptions { … }` block the return value is simply ignored.
      *
      * Options are set with functions, not assignable properties, on purpose:
-     * inside the block, `environment = environment` would silently assign a
+     * inside the Kotlin block, `environment = environment` would silently assign a
      * same-named local variable to itself, while `environment(environment)`
      * always reaches the builder.
      */
-    public class Builder internal constructor() {
+    public class Builder {
         private var environment: LinkEnvironment? = null
         private var language: String? = null
         private var theme: LinkTheme? = null
@@ -73,31 +84,22 @@ public class LinkOptions internal constructor(
         private var displayFiatCurrency: String? = null
 
         /** Which hosted deployment to open. `null` opens [LinkEnvironment.PROD]. */
-        public fun environment(value: LinkEnvironment?) {
-            environment = value
-        }
+        public fun environment(value: LinkEnvironment?): Builder = apply { environment = value }
 
         /** UI language as a locale code (e.g. `"es"`). */
-        public fun language(value: String?) {
-            language = value
-        }
+        public fun language(value: String?): Builder = apply { language = value }
 
         /** How Link is themed. [LinkTheme.SYSTEM] follows the device appearance. */
-        public fun theme(value: LinkTheme?) {
-            theme = value
-        }
+        public fun theme(value: LinkTheme?): Builder = apply { theme = value }
 
         /** Pre-selects a wallet integration. */
-        public fun integrationId(value: String?) {
-            integrationId = value
-        }
+        public fun integrationId(value: String?): Builder = apply { integrationId = value }
 
         /** ISO 4217 code (e.g. `"DKK"`) for the currency Link shows. */
-        public fun displayFiatCurrency(value: String?) {
-            displayFiatCurrency = value
-        }
+        public fun displayFiatCurrency(value: String?): Builder = apply { displayFiatCurrency = value }
 
-        internal fun build(): LinkOptions =
+        /** Creates the [LinkOptions]. The builder can keep being used afterwards. */
+        public fun build(): LinkOptions =
             LinkOptions(
                 environment,
                 language,
@@ -130,7 +132,11 @@ public class LinkOptions internal constructor(
             "integrationId=$integrationId, displayFiatCurrency=$displayFiatCurrency)"
 }
 
-/** [LinkOptions] with every option unset: production, Link's own defaults. */
+/**
+ * [LinkOptions] with every option unset: production, Link's own defaults.
+ * Kotlin only; from Java use `new LinkOptions.Builder().build()`.
+ */
+@JvmSynthetic
 public fun LinkOptions(): LinkOptions = LinkOptions.Builder().build()
 
 /**
@@ -142,5 +148,8 @@ public fun LinkOptions(): LinkOptions = LinkOptions.Builder().build()
  *     language("es")
  * }
  * ```
+ *
+ * Kotlin only; from Java use [LinkOptions.Builder].
  */
+@JvmSynthetic
 public fun LinkOptions(block: LinkOptions.Builder.() -> Unit): LinkOptions = LinkOptions.Builder().apply(block).build()
