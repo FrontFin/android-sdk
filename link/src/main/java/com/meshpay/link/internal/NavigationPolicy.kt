@@ -35,6 +35,8 @@ private val BLOCKED_SCHEMES =
 /** `about:` pages a frame may legitimately load (e.g. captcha iframes). */
 private val ALLOWED_ABOUT_PAGES = setOf("about:blank", "about:srcdoc")
 
+private fun isAllowedAboutPage(url: String): Boolean = url.lowercase() in ALLOWED_ABOUT_PAGES
+
 private val PLAIN_SCHEME = Regex("^[a-z][a-z0-9+.-]*$", RegexOption.IGNORE_CASE)
 
 /**
@@ -62,7 +64,7 @@ internal fun decideNavigation(
     val scheme = getScheme(url)
     if (scheme == null || scheme in BLOCKED_SCHEMES) return NavigationDecision.Block
     if (scheme == "about") {
-        return if (url.lowercase() in ALLOWED_ABOUT_PAGES) {
+        return if (isAllowedAboutPage(url)) {
             NavigationDecision.Load
         } else {
             NavigationDecision.Block
@@ -77,6 +79,21 @@ internal fun decideNavigation(
     }
     return externalAppDecision(url, scheme)
 }
+
+/**
+ * Whether a main-frame document that has already started loading is outside the
+ * session's Link origin, so it must not stay in the WebView (PRG-2294).
+ *
+ * Second gate behind [decideNavigation]: Android never calls
+ * `shouldOverrideUrlLoading` for POST navigations, so a `target=_top` form (from
+ * Link or one of its iframes) can commit any `https` or `http` page in the main
+ * frame. Every other foreign main-frame page is opened externally, so one seen
+ * here got past the first gate.
+ */
+internal fun isForeignTopFrameDocument(
+    url: String,
+    linkOrigin: String,
+): Boolean = !isAllowedAboutPage(url) && getOrigin(url) != linkOrigin
 
 /**
  * Where a `window.open()` / `target="_blank"` request goes. A new window never
