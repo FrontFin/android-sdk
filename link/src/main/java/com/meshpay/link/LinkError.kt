@@ -3,7 +3,13 @@ package com.meshpay.link
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
-/** Why Link could not be shown or could not continue. */
+/**
+ * Why Link could not be shown or could not continue.
+ *
+ * New codes may be added in minor releases, so handle codes you don't know, for
+ * example with an `else` branch in a `when`. Existing codes keep their meaning and
+ * [value] across 1.x.
+ */
 public enum class LinkErrorCode(public val value: String) {
     /** The page failed to load (network error or an HTTP error on the page itself). */
     LOAD_ERROR("load-error"),

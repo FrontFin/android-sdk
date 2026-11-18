@@ -12,9 +12,11 @@ link/                                  → com.meshpay:link (published AAR)
   src/main/java/com/meshpay/link/
     LinkConfiguration, LinkOptions, LinkResult, LinkError   (public API)
     LinkContract        ActivityResultContract<LinkConfiguration, LinkResult>
-    LinkHandle         close()
+    LinkHandle          close()
+    LinkSdk             VERSION
     internal/           LinkActivity, LinkUrlBuilder, Origin, NavigationPolicy, BridgeMessage, ExternalLauncher
   consumer-rules.pro
+  api/link.api                         locked public API (binary-compatibility-validator)
 example/                               pasted-token sample app
 test-vectors/                          link-url.json, navigation.json (shared across the four SDKs)
 ```
@@ -37,6 +39,12 @@ test-vectors/                          link-url.json, navigation.json (shared ac
 - **Coverage floor:** lines/functions/statements ≥ 90 %, branches ≥ 80 %
   (`link:jacocoCoverageVerification`). Ratchet upward.
 - Public API uses Kotlin `explicitApi()` — mark new public declarations `public`.
+- **The public API is locked** in `link/api/link.api`; CI runs `apiCheck`. A change
+  that touches it must be deliberate: run `./gradlew link:apiDump` and commit the
+  file. Public input types are plain classes, not data classes (no `copy`/
+  `componentN` to break); add new options only as trailing optional parameters.
+  `LinkErrorCode`/`LinkExitStatus` may gain values in 1.x; `LinkResult` stays
+  `Exit` | `Error`.
 
 ## Commands
 
@@ -45,6 +53,7 @@ test-vectors/                          link-url.json, navigation.json (shared ac
 | `./gradlew link:test` | Unit tests (Robolectric) |
 | `./gradlew link:jacocoCoverageVerification` | Tests + coverage gate |
 | `./gradlew link:ktlintCheck link:detekt` | Lint |
+| `./gradlew link:apiCheck` / `link:apiDump` | Check / update the locked public API |
 | `./gradlew link:lintRelease` | Android Lint |
 | `./gradlew link:assembleRelease` | Build the AAR |
 | `./gradlew :example:installDebug` | Install the sample app |

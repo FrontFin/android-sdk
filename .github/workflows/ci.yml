@@ -48,6 +48,11 @@ jobs:
       - name: Lint — ktlint + detekt 🧹
         run: ./gradlew link:ktlintCheck link:detekt
 
+      # Fails when the public API differs from link/api/link.api. Run
+      # `./gradlew link:apiDump` and commit the file to make a deliberate change.
+      - name: Public API check 🔒
+        run: ./gradlew link:apiCheck
+
       - name: Android Lint 🔎
         run: ./gradlew link:lintRelease
 

@@ -4,6 +4,19 @@ All notable changes to the MeshPay Link Android SDK are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+- `LinkSdk.VERSION` with the SDK version
+- `@JvmOverloads` constructors on `LinkOptions` and `LinkConfiguration`
+
+### Changed
+- Public API is locked and checked in CI (`link/api/link.api`)
+- `LinkOptions` and `LinkConfiguration` are no longer data classes: no `copy()` or destructuring
+- `LinkOptions.environment` defaults to `null`, which still opens `PROD`
+- `LinkConfiguration.toString()` no longer includes the token
+- `LinkErrorCode` and `LinkExitStatus` may gain values in minor releases; handle unknown ones with `else`
+
 ## 0.1.0
 
 ### Added

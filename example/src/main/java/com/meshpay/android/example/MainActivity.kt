@@ -153,14 +153,13 @@ private fun LinkDemoScreen() {
                             token = token.trim(),
                             clientId = clientId.trim(),
                             options = LinkOptions(
+                                // "Not set" (null) leaves the SDK default, PROD, in place.
+                                environment = environment,
                                 theme = theme,
                                 language = language.trim().ifBlank { null },
                                 integrationId = integrationId.trim().ifBlank { null },
                                 displayFiatCurrency = fiat.trim().ifBlank { null },
-                            ).let { options ->
-                                // "Not set" leaves the SDK default in place.
-                                environment?.let { options.copy(environment = it) } ?: options
-                            },
+                            ),
                         ),
                     )
                 },

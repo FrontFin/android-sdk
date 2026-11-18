@@ -17,6 +17,7 @@ dependencies {
 ```
 
 - **Minimum SDK:** Android 7.0 (API 24)
+- **Kotlin:** apps built with Kotlin 1.9 or newer.
 - No runtime permissions are required. Nothing is added to your manifest for v1,
   apart from optional deep-link return configuration (see [Wallet apps](#wallet-apps)).
 
@@ -62,7 +63,7 @@ The result is delivered **exactly once** and survives host Activity recreation.
 
 | Option | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `environment` | `LinkEnvironment` | `PROD` | `PROD`, `SBX` or `DEV`. |
+| `environment` | `LinkEnvironment?` | unset (`PROD`) | `PROD`, `SBX` or `DEV`. Unset opens production. |
 | `language` | `String?` | unset | Locale code, sent to Link as `lng`. |
 | `theme` | `LinkTheme?` | unset | `LIGHT`, `DARK` or `SYSTEM` (resolved from the device appearance at open time). |
 | `integrationId` | `String?` | unset | Pre-selects a wallet integration. |
@@ -77,6 +78,9 @@ The result is delivered **exactly once** and survives host Activity recreation.
   created a fiat ramp transfer).
 - **`CANCELED`** — anything else, including every session end where Link reported
   no status.
+
+New statuses may be added in minor releases, so give a `when` over
+`LinkExitStatus` an `else` branch.
 
 This drives your UI only; it is **never proof of payment**. Confirm the outcome
 server-side.
@@ -102,6 +106,9 @@ developers only — it never contains the token, the Link URL or a stack trace.
 | `LOAD_TIMEOUT` | The page did not load within 15 seconds. |
 | `SESSION_INTERRUPTED` | The WebView renderer died, or the process was killed mid-session, and Link cannot resume. |
 
+New codes may be added in minor releases, so give a `when` over `LinkErrorCode`
+an `else` branch. `LinkResult` itself is always `Exit` or `Error`.
+
 ## Wallet apps
 
 OAuth pages, on-ramp/exchange hand-offs, and wallet deep links (`metamask://…`,
@@ -110,10 +117,22 @@ browser, so universal links and App Links reach the right app. To return to your
 app afterwards, configure your own deep link / App Link; Link resumes when your
 app comes back to the foreground.
 
+## SDK version
+
+`LinkSdk.VERSION` is the SDK version (`MAJOR.MINOR.PATCH`). Include it in bug
+reports.
+
 ## Secret handling
 
 Only the **session token** goes in the app, and it is single-use. Your **client
 secret** must never ship in the app — mint session tokens on your backend.
+`LinkConfiguration.toString()` never includes the token.
+
+## Versioning
+
+The SDK follows [Semantic Versioning](https://semver.org). From 1.0.0, breaking
+changes to the public API ship only in a new major version. Minor releases may add
+options to `LinkOptions` and new values to `LinkErrorCode` and `LinkExitStatus`.
 
 ## License
 

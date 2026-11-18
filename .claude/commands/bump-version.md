@@ -40,8 +40,13 @@ git diff <latest-tag>..HEAD -- \
   'link/src/main/java/com/meshpay/link/LinkResult.kt' \
   'link/src/main/java/com/meshpay/link/LinkError.kt' \
   'link/src/main/java/com/meshpay/link/LinkContract.kt' \
-  'link/src/main/java/com/meshpay/link/LinkHandle.kt'
+  'link/src/main/java/com/meshpay/link/LinkHandle.kt' \
+  'link/src/main/java/com/meshpay/link/LinkSdk.kt' \
+  'link/api/link.api'
 ```
+
+`link/api/link.api` is the locked public API (binary-compatibility-validator; CI
+runs `apiCheck`). Any line in its diff is a public API change, so read it first.
 
 Also capture the commit log for the changelog summary:
 
@@ -58,15 +63,22 @@ Analyse the diff against the public API (apply the highest matching level):
 #### MAJOR — any of:
 - A public type is **deleted or renamed** (`LinkConfiguration`, `LinkOptions`,
   `LinkResult`, `LinkExitStatus`, `LinkError`, `LinkErrorCode`, `LinkEnvironment`,
-  `LinkTheme`, `LinkContract`, `LinkHandle`)
+  `LinkTheme`, `LinkContract`, `LinkHandle`, `LinkSdk`)
+- A line is **removed or changed** in `link/api/link.api`, except the one case under
+  MINOR below
+- A new subtype of `LinkResult` (1.x promises it stays `Exit` | `Error`)
 - A public property/parameter is removed, or a **required** parameter is added
 - A value is removed from `LinkErrorCode`, `LinkExitStatus`, `LinkEnvironment` or `LinkTheme`
 - The entry point or callback/result semantics change in a breaking way
 - `minSdk` is raised
 
 #### MINOR — any of (and no MAJOR):
-- A new **optional** parameter or option is added
-- A new public type, or a new value in a public enum / sealed hierarchy
+- A new **optional** parameter or option is added as the **last** constructor
+  parameter. This is source-compatible, but `link.api` shows the old synthetic
+  `<init>(…ILkotlin/jvm/internal/DefaultConstructorMarker;)V` constructor replaced:
+  libraries compiled against the old version must be rebuilt. Say so in the changelog.
+- A new public type, or a new value in `LinkErrorCode`, `LinkExitStatus`,
+  `LinkEnvironment` or `LinkTheme` (documented as extensible in 1.x)
 
 #### PATCH — everything else:
 - Bug fixes, internal refactors (anything under `internal/`), test additions

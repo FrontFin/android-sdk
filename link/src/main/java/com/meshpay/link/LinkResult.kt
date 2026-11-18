@@ -8,6 +8,10 @@ import kotlinx.parcelize.Parcelize
  *
  * For driving the UI only, never proof of payment: confirm the outcome
  * server-side.
+ *
+ * New statuses may be added in minor releases, so handle statuses you don't
+ * know, for example with an `else` branch in a `when`. Existing statuses keep
+ * their meaning and [value] across 1.x.
  */
 public enum class LinkExitStatus(public val value: String) {
     /**

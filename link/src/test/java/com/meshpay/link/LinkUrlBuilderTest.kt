@@ -20,6 +20,14 @@ import org.robolectric.annotation.Config
 @Config(manifest = Config.NONE)
 class LinkUrlBuilderTest {
     @Test
+    fun `unset environment opens production`() {
+        val unset = buildLinkUrl("t", "c", LinkOptions(), isSystemDark = false)
+        val prod = buildLinkUrl("t", "c", LinkOptions(environment = LinkEnvironment.PROD), isSystemDark = false)
+        assertEquals(prod, unset)
+        assertEquals("https://link.meshpay.com", unset.origin)
+    }
+
+    @Test
     fun `origin is the scheme and host of the environment's Link URL`() {
         val prod = buildLinkUrl("t", "c", LinkOptions(environment = LinkEnvironment.PROD), isSystemDark = false)
         assertEquals("https://link.meshpay.com", prod.origin)
@@ -77,7 +85,8 @@ class LinkUrlBuilderTest {
                 when (json.optString("environment")) {
                     "sbx" -> LinkEnvironment.SBX
                     "dev" -> LinkEnvironment.DEV
-                    else -> LinkEnvironment.PROD
+                    "prod" -> LinkEnvironment.PROD
+                    else -> null
                 },
             language = json.optString("language").ifEmpty { null },
             theme =
