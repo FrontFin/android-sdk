@@ -45,13 +45,10 @@ jobs:
       - name: Set up Gradle 🐘
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
-      - name: Lint — ktlint + detekt 🧹
-        run: ./gradlew link:ktlintCheck link:detekt
-
-      # Fails when the public API differs from link/api/link.api. Run
+      # apiCheck fails when the public API differs from link/api/link.api. Run
       # `./gradlew link:apiDump` and commit the file to make a deliberate change.
-      - name: Public API check 🔒
-        run: ./gradlew link:apiCheck
+      - name: Lint — ktlint + detekt + public API check 🧹
+        run: ./gradlew link:ktlintCheck link:detekt link:apiCheck
 
       - name: Android Lint 🔎
         run: ./gradlew link:lintRelease
