@@ -88,8 +88,10 @@ LinkHandle.close()
 ```
 
 Link is asked to close gracefully first, so a user who already finished the flow
-is still reported as `SUCCESS`. The Android back button and gesture go through the
-WebView history first, then exit.
+is still reported as `SUCCESS`. `LinkHandle.close()` ends Link after 1 s even if
+Link opens an exit prompt. The Android back button and gesture go through the
+WebView history first, then ask Link to close. If Link opens its exit prompt, it
+stays open until the user answers.
 
 ## Errors
 

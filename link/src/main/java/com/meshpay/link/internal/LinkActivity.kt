@@ -21,6 +21,7 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.annotation.VisibleForTesting
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -279,7 +280,8 @@ internal class LinkActivity : ComponentActivity() {
         // Otherwise the globals are injected on Link's `loaded` message, below.
     }
 
-    private fun onBridgeMessage(json: String?) {
+    @VisibleForTesting
+    internal fun onBridgeMessage(json: String?) {
         when (val message = parseLinkMessage(json)) {
             is LinkMessage.Close -> finishWith(LinkResult.Exit(message.status))
             LinkMessage.Loaded -> onLinkLoaded()
@@ -464,10 +466,14 @@ internal class LinkActivity : ComponentActivity() {
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val view = webView
-                if (view != null && view.canGoBack() && !closing) {
-                    view.goBack()
-                } else {
-                    requestClose()
+                val linkAnswers = loaded && !navigationFailed && !closing
+                when {
+                    view != null && view.canGoBack() && !closing -> view.goBack()
+                    // A loaded Link decides for itself (it may open an exit prompt), so no
+                    // force-close timer runs. Before it loads, or on a failed page, the grace
+                    // timer still applies.
+                    view != null && linkAnswers -> view.evaluateJavascript(buildCloseRequestedScript(), null)
+                    else -> requestClose()
                 }
             }
         }
