@@ -3,6 +3,7 @@ package com.meshpay.link.internal
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -76,8 +77,12 @@ internal class LinkActivity : ComponentActivity() {
     private var loaded = false
     private var navigationFailed = false
 
-    /** Uptime of the last Back that asked a loaded Link to close; `null` if none. */
-    private var lastCloseRequestBackAt: Long? = null
+    /**
+     * Set once a foreign document reached the main frame (PRG-2294). From then
+     * on nothing that page does — navigations, popups, deep links — leaves the
+     * SDK, even at the moment before the WebView is destroyed.
+     */
+    private var contained = false
 
     private val closeRequester = { requestClose() }
 
@@ -178,7 +183,12 @@ internal class LinkActivity : ComponentActivity() {
     }
 
     /** The native ✕, drawn like react-native-sdk's `CloseButton`. Top-right, in the
-     *  same spot as Link's own header close, so it does not jump when Link loads. */
+     *  same spot as Link's own header close, so it does not jump when Link loads.
+     *
+     *  `RIGHT`, not `END`, on purpose: Link's header close stays top-right in every
+     *  locale, and `applyInsets` sets `rightMargin` to match. `END` would move the
+     *  ✕ to the left in RTL with no inset on that side. */
+    @SuppressLint("RtlHardcoded")
     private fun addCloseButton(dark: Boolean) {
         closeButton =
             LinkCloseButton(this, foregroundColor(dark)).apply {
@@ -315,10 +325,31 @@ internal class LinkActivity : ComponentActivity() {
                 view: WebView,
                 request: WebResourceRequest,
             ): Boolean {
+                if (contained) return true
                 val decision = decideNavigation(request.url.toString(), request.isForMainFrame, built.origin)
                 if (decision is NavigationDecision.OpenExternal) launcher.open(decision)
                 // Return true to cancel; only `Load` proceeds in the WebView.
                 return decision !is NavigationDecision.Load
+            }
+
+            // Second origin gate. Called once per main-frame document, POST
+            // included, which `shouldOverrideUrlLoading` never sees.
+            override fun onPageStarted(
+                view: WebView,
+                url: String,
+                favicon: Bitmap?,
+            ) {
+                enforceMainFrameOrigin(view, url)
+            }
+
+            // Also checked on every history change, so the gate does not rest on
+            // a single callback.
+            override fun doUpdateVisitedHistory(
+                view: WebView,
+                url: String,
+                isReload: Boolean,
+            ) {
+                enforceMainFrameOrigin(view, url)
             }
 
             override fun onPageFinished(
@@ -377,6 +408,7 @@ internal class LinkActivity : ComponentActivity() {
                 isUserGesture: Boolean,
                 resultMsg: android.os.Message,
             ): Boolean {
+                if (contained) return false
                 // Read the target URL through a throwaway WebView and route it, so
                 // `window.open` / `target=_blank` reaches the wallet or browser (N4).
                 // A popup that never navigates (`window.open()` with no URL, or
@@ -397,7 +429,7 @@ internal class LinkActivity : ComponentActivity() {
                             if (routed) return true
                             routed = true
                             val decision = decideNewWindow(request.url.toString())
-                            if (decision is NavigationDecision.OpenExternal) launcher.open(decision)
+                            if (decision is NavigationDecision.OpenExternal && !contained) launcher.open(decision)
                             // Never destroy a WebView from inside its own callback.
                             destroyLater(v)
                             return true
@@ -428,6 +460,31 @@ internal class LinkActivity : ComponentActivity() {
 
             override fun onConsoleMessage(message: ConsoleMessage): Boolean = true
         }
+
+    /**
+     * Ends the session when a document outside the Link origin is in the main
+     * frame. The WebView is detached at once, so the page is never shown, and
+     * destroyed after this callback returns.
+     */
+    private fun enforceMainFrameOrigin(
+        view: WebView,
+        url: String,
+    ) {
+        if (contained || !isForeignTopFrameDocument(url, built.origin)) return
+        contained = true
+        view.stopLoading()
+        if (view === webView) {
+            webView = null
+            (view.parent as? android.view.ViewGroup)?.removeView(view)
+            orphans += view
+            destroyLater(view)
+        }
+        finishWith(
+            LinkResult.Error(
+                LinkError(LinkErrorCode.SESSION_INTERRUPTED, "Link navigated to a page outside its origin."),
+            ),
+        )
+    }
 
     private fun onMainFrameLoadFailed() {
         if (loaded && !closing) {
@@ -471,6 +528,9 @@ internal class LinkActivity : ComponentActivity() {
 
     private val backCallback =
         object : OnBackPressedCallback(true) {
+            /** Uptime of the last Back that asked Link to close; `null` if none. */
+            private var lastCloseRequestAt: Long? = null
+
             override fun handleOnBackPressed() {
                 val view = webView
                 when {
@@ -486,17 +546,17 @@ internal class LinkActivity : ComponentActivity() {
                     else -> {
                         // Link decides for itself (it may open an exit prompt), so no
                         // force-close timer runs.
-                        lastCloseRequestBackAt = SystemClock.uptimeMillis()
+                        lastCloseRequestAt = SystemClock.uptimeMillis()
                         view.evaluateJavascript(buildCloseRequestedScript(), null)
                     }
                 }
             }
-        }
 
-    private fun withinBackExitWindow(): Boolean {
-        val last = lastCloseRequestBackAt ?: return false
-        return SystemClock.uptimeMillis() - last < BACK_EXIT_WINDOW_MS
-    }
+            private fun withinBackExitWindow(): Boolean {
+                val last = lastCloseRequestAt ?: return false
+                return SystemClock.uptimeMillis() - last < BACK_EXIT_WINDOW_MS
+            }
+        }
 
     private fun cancel() = finishWith(LinkResult.Exit(LinkExitStatus.CANCELED))
 
