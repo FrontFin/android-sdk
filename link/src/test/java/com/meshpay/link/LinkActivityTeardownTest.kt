@@ -62,7 +62,7 @@ class LinkActivityTeardownTest {
     @Test
     fun `back press on a loaded Link asks it to close without a force-close timer`() {
         val activity = launch().get()
-        activity.onBridgeMessage("""{"type":"loaded"}""")
+        postFromLink(activity, """{"type":"loaded"}""")
         val realWebView = findWebView(activity.window.decorView)
         val webView = shadowOf(realWebView)
 
@@ -76,14 +76,14 @@ class LinkActivityTeardownTest {
         assertEquals(CLOSE_REQUESTED_SCRIPT, webView.lastEvaluatedJavascript)
         assertNull(shadowOf(activity).resultIntent)
 
-        activity.onBridgeMessage("""{"type":"close","payload":{"status":"canceled"}}""")
+        postFromLink(activity, """{"type":"close","payload":{"status":"canceled"}}""")
         assertNotNull(shadowOf(activity).resultIntent)
     }
 
     @Test
     fun `second back press within the exit window closes a loaded Link at once`() {
         val activity = launch().get()
-        activity.onBridgeMessage("""{"type":"loaded"}""")
+        postFromLink(activity, """{"type":"loaded"}""")
 
         activity.onBackPressedDispatcher.onBackPressed()
         looper.idleFor(Duration.ofMillis(1_900))
@@ -97,7 +97,7 @@ class LinkActivityTeardownTest {
     @Test
     fun `second back press after the exit window asks Link again and restarts the window`() {
         val activity = launch().get()
-        activity.onBridgeMessage("""{"type":"loaded"}""")
+        postFromLink(activity, """{"type":"loaded"}""")
         val webView = shadowOf(findWebView(activity.window.decorView))
 
         activity.onBackPressedDispatcher.onBackPressed()
@@ -115,7 +115,7 @@ class LinkActivityTeardownTest {
     @Test
     fun `back press that goes back through history does not open the exit window`() {
         val activity = launch().get()
-        activity.onBridgeMessage("""{"type":"loaded"}""")
+        postFromLink(activity, """{"type":"loaded"}""")
         val realWebView = findWebView(activity.window.decorView)
         shadowOf(realWebView).setCanGoBack(true)
 
@@ -154,7 +154,7 @@ class LinkActivityTeardownTest {
     @Test
     fun `back press on a failed page closes at once`() {
         val activity = launch().get()
-        activity.onBridgeMessage("""{"type":"loaded"}""")
+        postFromLink(activity, """{"type":"loaded"}""")
         val realWebView = findWebView(activity.window.decorView)
         shadowOf(realWebView).setCanGoBack(true)
         shadowOf(realWebView).webViewClient.onReceivedHttpError(
@@ -172,13 +172,13 @@ class LinkActivityTeardownTest {
     @Test
     fun `back press during a host close on a loaded Link keeps Link's own result`() {
         val activity = launch().get()
-        activity.onBridgeMessage("""{"type":"loaded"}""")
+        postFromLink(activity, """{"type":"loaded"}""")
         LinkHandle.close()
         looper.idle()
 
         activity.onBackPressedDispatcher.onBackPressed()
         assertNull(shadowOf(activity).resultIntent)
-        activity.onBridgeMessage("""{"type":"close","payload":{"status":"success"}}""")
+        postFromLink(activity, """{"type":"close","payload":{"status":"success"}}""")
 
         assertEquals(LinkResult.Exit(LinkExitStatus.SUCCESS), result(activity))
     }
@@ -186,7 +186,7 @@ class LinkActivityTeardownTest {
     @Test
     fun `back press during a host close on a loaded Link exits after the grace timeout`() {
         val activity = launch().get()
-        activity.onBridgeMessage("""{"type":"loaded"}""")
+        postFromLink(activity, """{"type":"loaded"}""")
         LinkHandle.close()
         looper.idle()
 
@@ -213,7 +213,7 @@ class LinkActivityTeardownTest {
     @Test
     fun `back press on a loaded Link goes back through the WebView history first`() {
         val activity = launch().get()
-        activity.onBridgeMessage("""{"type":"loaded"}""")
+        postFromLink(activity, """{"type":"loaded"}""")
         val realWebView = findWebView(activity.window.decorView)
         shadowOf(realWebView).setCanGoBack(true)
 
@@ -241,7 +241,7 @@ class LinkActivityTeardownTest {
     @Test
     fun `host close after back on a loaded Link still exits after the grace timeout`() {
         val activity = launch().get()
-        activity.onBridgeMessage("""{"type":"loaded"}""")
+        postFromLink(activity, """{"type":"loaded"}""")
 
         activity.onBackPressedDispatcher.onBackPressed()
         LinkHandle.close()
@@ -249,6 +249,19 @@ class LinkActivityTeardownTest {
         looper.idleFor(Duration.ofSeconds(5))
 
         assertNotNull(shadowOf(activity).resultIntent)
+    }
+
+    /** Sends [json] through the SDK's `JSBridge`, the way Link's page does. */
+    private fun postFromLink(
+        activity: LinkActivity,
+        json: String,
+    ) {
+        val bridge = checkNotNull(shadowOf(findWebView(activity.window.decorView)).getJavascriptInterface("JSBridge"))
+        bridge.javaClass
+            .getMethod("sendNativeMessage", String::class.java)
+            .apply { isAccessible = true }
+            .invoke(bridge, json)
+        looper.idle()
     }
 
     private fun findWebView(view: View): WebView = findWebViewOrNull(view) ?: error("no WebView")

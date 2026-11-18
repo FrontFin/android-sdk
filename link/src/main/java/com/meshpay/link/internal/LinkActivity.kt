@@ -23,7 +23,6 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
-import androidx.annotation.VisibleForTesting
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -293,8 +292,7 @@ internal class LinkActivity : ComponentActivity() {
         // Otherwise the globals are injected on Link's `loaded` message, below.
     }
 
-    @VisibleForTesting
-    internal fun onBridgeMessage(json: String?) {
+    private fun onBridgeMessage(json: String?) {
         when (val message = parseLinkMessage(json)) {
             is LinkMessage.Close -> finishWith(LinkResult.Exit(message.status))
             LinkMessage.Loaded -> onLinkLoaded()
