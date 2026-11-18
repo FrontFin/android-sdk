@@ -26,7 +26,9 @@ internal object ActiveSession {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             current()
         } else {
-            mainHandler.post { current() }
+            // Re-check on the main thread: the session may have ended (and its
+            // Activity been destroyed) between this post and the time it runs.
+            mainHandler.post { if (closer === current) current() }
         }
     }
 }
