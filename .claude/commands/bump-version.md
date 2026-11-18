@@ -111,8 +111,21 @@ else. `BuildConfig.SDK_VERSION` and the release workflow both read this one valu
 
 ### Step 4 — Update CHANGELOG.md
 
-Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Prepend a new section at
-the very top:
+Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). PRs add their notes
+under a `## Unreleased` section at the top of the file, so first check for one:
+
+```bash
+grep -n '^## ' CHANGELOG.md | head -3
+```
+
+- **`## Unreleased` exists** — rename that heading to `## X.Y.Z`. Keep every entry under
+  it; add a bullet only for a consumer-visible change from the commit log that is not
+  already there. Do **not** prepend a second section: `release.yml` builds the GitHub
+  release notes from the lines between `## X.Y.Z` and the next `## ` heading, so notes
+  left under a separate `## Unreleased` would be missing from the release.
+- **No `## Unreleased`** — prepend a new section at the very top.
+
+Either way the result is one section for the release, directly under the file intro:
 
 ```markdown
 ## X.Y.Z
@@ -123,17 +136,22 @@ the very top:
 ### Changed
 - ...
 
+### Removed
+- ...
+
 ### Fixed
 - ...
 
-### Removed
+### Security
 - ...
 ```
 
 Rules:
-- No date — only the version number: `## X.Y.Z`.
-- Always include at least one `### Added` / `### Changed` / `### Fixed` / `### Removed`
-  sub-heading; omit empty ones.
+- No date — only the version number: `## X.Y.Z`. The heading must match exactly, or the
+  release workflow's changelog check fails.
+- No `## Unreleased` section is left behind; the next PR adds a fresh one.
+- Always include at least one `### Added` / `### Changed` / `### Removed` / `### Fixed` /
+  `### Security` sub-heading; omit empty ones, and keep them in that order.
 - One line per bullet, describing **what changed and why it matters** to a consumer, not
   internal implementation details.
 - `example/`, tests, `CLAUDE.md` and `README.md` changes go under **Changed** only if they
@@ -150,7 +168,7 @@ Reason: added `displayFiatCurrency` option to LinkOptions.
 
 Files updated:
   • gradle/libs.versions.toml   (meshpay-link)
-  • CHANGELOG.md                (new entry prepended)
+  • CHANGELOG.md                (## Unreleased renamed to ## 0.2.0)
 ```
 
 Then ask whether to commit. On yes, stage only the two files:

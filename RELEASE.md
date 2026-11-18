@@ -10,8 +10,9 @@ Releasing is just:
    ([`.claude/commands/bump-version.md`](.claude/commands/bump-version.md)). It
    diffs `HEAD` against the latest tag, classifies the change as MAJOR / MINOR /
    PATCH from the public API, updates `meshpay-link` in
-   `gradle/libs.versions.toml`, and prepends a `## X.Y.Z` entry to
-   [`CHANGELOG.md`](CHANGELOG.md). While on `0.x`, a MAJOR-class change bumps the
+   `gradle/libs.versions.toml`, and turns the `## Unreleased` section of
+   [`CHANGELOG.md`](CHANGELOG.md) into the `## X.Y.Z` entry (or adds one if there
+   is no Unreleased section). While on `0.x`, a MAJOR-class change bumps the
    minor number.
 2. **Open a PR and merge it to `main`.**
 
