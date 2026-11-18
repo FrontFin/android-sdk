@@ -29,7 +29,6 @@ import androidx.webkit.JavaScriptReplyProxy
 import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
-import com.meshpay.link.ActiveSession
 import com.meshpay.link.BuildConfig
 import com.meshpay.link.LinkConfiguration
 import com.meshpay.link.LinkError
