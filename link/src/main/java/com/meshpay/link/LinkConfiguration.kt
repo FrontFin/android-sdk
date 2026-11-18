@@ -41,7 +41,12 @@ public class LinkConfiguration(
             clientId == other.clientId &&
             options == other.options
 
-    override fun hashCode(): Int = listOf(token, clientId, options).hashCode()
+    override fun hashCode(): Int {
+        var result = token.hashCode()
+        result = 31 * result + clientId.hashCode()
+        result = 31 * result + options.hashCode()
+        return result
+    }
 
     /** Never includes the token: it is a single-use credential (§2.7). */
     override fun toString(): String = "LinkConfiguration(token=<redacted>, clientId=$clientId, options=$options)"

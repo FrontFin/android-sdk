@@ -116,7 +116,14 @@ public class LinkOptions internal constructor(
             integrationId == other.integrationId &&
             displayFiatCurrency == other.displayFiatCurrency
 
-    override fun hashCode(): Int = listOf(environment, language, theme, integrationId, displayFiatCurrency).hashCode()
+    override fun hashCode(): Int {
+        var result = environment.hashCode()
+        result = 31 * result + language.hashCode()
+        result = 31 * result + theme.hashCode()
+        result = 31 * result + integrationId.hashCode()
+        result = 31 * result + displayFiatCurrency.hashCode()
+        return result
+    }
 
     override fun toString(): String =
         "LinkOptions(environment=$environment, language=$language, theme=$theme, " +
