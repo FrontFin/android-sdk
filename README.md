@@ -100,7 +100,7 @@ developers only — it never contains the token, the Link URL or a stack trace.
 | --- | --- |
 | `LOAD_ERROR` | The page failed to load (including an HTTP 4xx/5xx on the main document), or `token`/`clientId` was blank. |
 | `LOAD_TIMEOUT` | The page did not load within 15 seconds. |
-| `SESSION_INTERRUPTED` | The WebView renderer died, or the process was killed mid-session, and Link cannot resume. |
+| `SESSION_INTERRUPTED` | Link cannot resume: the WebView renderer died, the process was killed mid-session, or a page from another origin reached the Link window, so the SDK closed Link rather than show it. |
 
 ## Wallet apps
 
