@@ -38,11 +38,11 @@ linkLauncher.launch(
     LinkConfiguration(
         token = sessionToken,
         clientId = clientId,
-        options = LinkOptions(
-            environment = LinkEnvironment.PROD,
-            theme = LinkTheme.SYSTEM,
-            language = "en",
-        ),
+        options = LinkOptions {
+            environment = LinkEnvironment.PROD
+            theme = LinkTheme.SYSTEM
+            language = "en"
+        },
     ),
 )
 ```
@@ -51,15 +51,25 @@ The result is delivered **exactly once** and survives host Activity recreation.
 
 ## Configuration
 
-`LinkConfiguration(token, clientId, options)`:
+`LinkConfiguration(token, clientId)` or `LinkConfiguration(token, clientId, options)`:
 
 | Field | Required | Description |
 | --- | --- | --- |
 | `token` | yes | Session token from `POST /v2/sessions`. A single-use exchange code; trimmed. A blank value is reported as `load-error` (see below), not thrown. |
 | `clientId` | yes | Your Mesh client ID. Trimmed. A blank value is reported through `LinkResult.Error` with `load-error`, before anything opens — nothing is thrown. |
-| `options` | no | `LinkOptions` — every field optional. |
+| `options` | no | `LinkOptions { … }` — every field optional. |
 
 ### `LinkOptions`
+
+Build options with `LinkOptions { … }` and set only what you need; anything you
+don't set stays unset:
+
+```kotlin
+val options = LinkOptions {
+    environment = LinkEnvironment.SBX
+    displayFiatCurrency = "DKK"
+}
+```
 
 | Option | Type | Default | Notes |
 | --- | --- | --- | --- |
@@ -132,7 +142,8 @@ secret** must never ship in the app — mint session tokens on your backend.
 
 The SDK follows [Semantic Versioning](https://semver.org). From 1.0.0, breaking
 changes to the public API ship only in a new major version. Minor releases may add
-options to `LinkOptions` and new values to `LinkErrorCode` and `LinkExitStatus`.
+options to `LinkOptions` and new values to `LinkErrorCode`, `LinkExitStatus`,
+`LinkEnvironment` and `LinkTheme`, so give a `when` over any of them an `else` branch.
 
 ## License
 

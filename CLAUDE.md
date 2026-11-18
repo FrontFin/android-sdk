@@ -42,9 +42,12 @@ test-vectors/                          link-url.json, navigation.json (shared ac
 - **The public API is locked** in `link/api/link.api`; CI runs `apiCheck`. A change
   that touches it must be deliberate: run `./gradlew link:apiDump` and commit the
   file. Public input types are plain classes, not data classes (no `copy`/
-  `componentN` to break); add new options only as trailing optional parameters.
-  `LinkErrorCode`/`LinkExitStatus` may gain values in 1.x; `LinkResult` stays
-  `Exit` | `Error`.
+  `componentN` to break), and public constructors have no default arguments (no
+  hidden `DefaultConstructorMarker` constructor). A new option is a new
+  `LinkOptions.Builder` property; a new `LinkConfiguration` field is a new
+  constructor overload, keeping the existing ones.
+  `LinkErrorCode`/`LinkExitStatus`/`LinkEnvironment`/`LinkTheme` may gain values
+  in 1.x; `LinkResult` stays `Exit` | `Error`.
 
 ## Commands
 

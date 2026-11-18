@@ -73,10 +73,9 @@ Analyse the diff against the public API (apply the highest matching level):
 - `minSdk` is raised
 
 #### MINOR — any of (and no MAJOR):
-- A new **optional** parameter or option is added as the **last** constructor
-  parameter. This is source-compatible, but `link.api` shows the old synthetic
-  `<init>(…ILkotlin/jvm/internal/DefaultConstructorMarker;)V` constructor replaced:
-  libraries compiled against the old version must be rebuilt. Say so in the changelog.
+- A new option: a new property on `LinkOptions.Builder` (and a getter on
+  `LinkOptions`), or a new `LinkConfiguration` constructor overload that keeps the
+  existing ones. `link.api` only gains lines.
 - A new public type, or a new value in `LinkErrorCode`, `LinkExitStatus`,
   `LinkEnvironment` or `LinkTheme` (documented as extensible in 1.x)
 

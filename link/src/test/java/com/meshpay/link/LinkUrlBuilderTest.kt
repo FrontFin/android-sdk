@@ -22,16 +22,16 @@ class LinkUrlBuilderTest {
     @Test
     fun `unset environment opens production`() {
         val unset = buildLinkUrl("t", "c", LinkOptions(), isSystemDark = false)
-        val prod = buildLinkUrl("t", "c", LinkOptions(environment = LinkEnvironment.PROD), isSystemDark = false)
+        val prod = buildLinkUrl("t", "c", LinkOptions { environment = LinkEnvironment.PROD }, isSystemDark = false)
         assertEquals(prod, unset)
         assertEquals("https://link.meshpay.com", unset.origin)
     }
 
     @Test
     fun `origin is the scheme and host of the environment's Link URL`() {
-        val prod = buildLinkUrl("t", "c", LinkOptions(environment = LinkEnvironment.PROD), isSystemDark = false)
+        val prod = buildLinkUrl("t", "c", LinkOptions { environment = LinkEnvironment.PROD }, isSystemDark = false)
         assertEquals("https://link.meshpay.com", prod.origin)
-        val sbx = buildLinkUrl("t", "c", LinkOptions(environment = LinkEnvironment.SBX), isSystemDark = false)
+        val sbx = buildLinkUrl("t", "c", LinkOptions { environment = LinkEnvironment.SBX }, isSystemDark = false)
         assertEquals("https://link.sbx.meshpay.com", sbx.origin)
     }
 
@@ -80,31 +80,31 @@ class LinkUrlBuilderTest {
 
     private fun parseOptions(json: JSONObject?): LinkOptions {
         if (json == null) return LinkOptions()
-        return LinkOptions(
+        return LinkOptions {
             environment =
                 when (json.optString("environment")) {
                     "sbx" -> LinkEnvironment.SBX
                     "dev" -> LinkEnvironment.DEV
                     "prod" -> LinkEnvironment.PROD
                     else -> null
-                },
-            language = json.optString("language").ifEmpty { null },
+                }
+            language = json.optString("language").ifEmpty { null }
             theme =
                 when (json.optString("theme")) {
                     "light" -> LinkTheme.LIGHT
                     "dark" -> LinkTheme.DARK
                     "system" -> LinkTheme.SYSTEM
                     else -> null
-                },
-            integrationId = json.optString("integrationId").ifEmpty { null },
-            displayFiatCurrency = json.optString("displayFiatCurrency").ifEmpty { null },
-        )
+                }
+            integrationId = json.optString("integrationId").ifEmpty { null }
+            displayFiatCurrency = json.optString("displayFiatCurrency").ifEmpty { null }
+        }
     }
 
     @Test
     fun `system theme follows the device appearance`() {
-        val light = buildLinkUrl("t", "c", LinkOptions(theme = LinkTheme.SYSTEM), isSystemDark = false)
-        val dark = buildLinkUrl("t", "c", LinkOptions(theme = LinkTheme.SYSTEM), isSystemDark = true)
+        val light = buildLinkUrl("t", "c", LinkOptions { theme = LinkTheme.SYSTEM }, isSystemDark = false)
+        val dark = buildLinkUrl("t", "c", LinkOptions { theme = LinkTheme.SYSTEM }, isSystemDark = true)
         assertTrue(light.href.contains("th=light"))
         assertTrue(dark.href.contains("th=dark"))
     }

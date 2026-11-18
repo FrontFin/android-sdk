@@ -152,14 +152,13 @@ private fun LinkDemoScreen() {
                         LinkConfiguration(
                             token = token.trim(),
                             clientId = clientId.trim(),
-                            options = LinkOptions(
-                                // "Not set" (null) leaves the SDK default, PROD, in place.
-                                environment = environment,
-                                theme = theme,
-                                language = language.trim().ifBlank { null },
-                                integrationId = integrationId.trim().ifBlank { null },
-                                displayFiatCurrency = fiat.trim().ifBlank { null },
-                            ),
+                            options = LinkOptions {
+                                this.environment = environment // null defaults to PROD
+                                this.theme = theme
+                                this.language = language.trim().ifBlank { null }
+                                this.integrationId = integrationId.trim().ifBlank { null }
+                                displayFiatCurrency = fiat.trim().ifBlank { null }
+                            },
                         ),
                     )
                 },

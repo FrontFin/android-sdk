@@ -19,14 +19,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class PublicApiTest {
-    private val options =
-        LinkOptions(
-            environment = LinkEnvironment.SBX,
-            language = "es",
-            theme = LinkTheme.DARK,
-            integrationId = "int-1",
-            displayFiatCurrency = "DKK",
-        )
+    private val options = options(LinkEnvironment.SBX, "es", LinkTheme.DARK, "int-1", "DKK")
 
     @Test
     fun `LinkOptions defaults`() {
@@ -39,8 +32,16 @@ class PublicApiTest {
     }
 
     @Test
+    fun `builder sets only the options given`() {
+        val sbx = LinkOptions { environment = LinkEnvironment.SBX }
+        assertEquals(LinkEnvironment.SBX, sbx.environment)
+        assertEquals(null, sbx.theme)
+        assertEquals(LinkOptions(), LinkOptions { })
+    }
+
+    @Test
     fun `LinkOptions equal by value`() {
-        val same = LinkOptions(LinkEnvironment.SBX, "es", LinkTheme.DARK, "int-1", "DKK")
+        val same = options(LinkEnvironment.SBX, "es", LinkTheme.DARK, "int-1", "DKK")
         assertEquals(options, options)
         assertEquals(options, same)
         assertEquals(options.hashCode(), same.hashCode())
@@ -52,11 +53,11 @@ class PublicApiTest {
     fun `LinkOptions differ when any field differs`() {
         val variants =
             listOf(
-                LinkOptions(LinkEnvironment.PROD, "es", LinkTheme.DARK, "int-1", "DKK"),
-                LinkOptions(LinkEnvironment.SBX, "en", LinkTheme.DARK, "int-1", "DKK"),
-                LinkOptions(LinkEnvironment.SBX, "es", LinkTheme.LIGHT, "int-1", "DKK"),
-                LinkOptions(LinkEnvironment.SBX, "es", LinkTheme.DARK, "int-2", "DKK"),
-                LinkOptions(LinkEnvironment.SBX, "es", LinkTheme.DARK, "int-1", "USD"),
+                options(LinkEnvironment.PROD, "es", LinkTheme.DARK, "int-1", "DKK"),
+                options(LinkEnvironment.SBX, "en", LinkTheme.DARK, "int-1", "DKK"),
+                options(LinkEnvironment.SBX, "es", LinkTheme.LIGHT, "int-1", "DKK"),
+                options(LinkEnvironment.SBX, "es", LinkTheme.DARK, "int-2", "DKK"),
+                options(LinkEnvironment.SBX, "es", LinkTheme.DARK, "int-1", "USD"),
             )
         variants.forEach { assertNotEquals(options, it) }
     }
@@ -73,7 +74,7 @@ class PublicApiTest {
     fun `LinkConfiguration equal by value`() {
         val config = LinkConfiguration("tok", "cid", options)
         val same =
-            LinkConfiguration("tok", "cid", LinkOptions(LinkEnvironment.SBX, "es", LinkTheme.DARK, "int-1", "DKK"))
+            LinkConfiguration("tok", "cid", options(LinkEnvironment.SBX, "es", LinkTheme.DARK, "int-1", "DKK"))
         assertEquals(config, config)
         assertEquals(config, same)
         assertEquals(config.hashCode(), same.hashCode())
@@ -106,6 +107,22 @@ class PublicApiTest {
         assertEquals(BuildConfig.SDK_VERSION, LinkSdk.VERSION)
         assertTrue(Regex("""\d+\.\d+\.\d+""").matches(LinkSdk.VERSION))
     }
+
+    /** Every option set, through the public builder. */
+    private fun options(
+        environment: LinkEnvironment?,
+        language: String?,
+        theme: LinkTheme?,
+        integrationId: String?,
+        displayFiatCurrency: String?,
+    ): LinkOptions =
+        LinkOptions {
+            this.environment = environment
+            this.language = language
+            this.theme = theme
+            this.integrationId = integrationId
+            this.displayFiatCurrency = displayFiatCurrency
+        }
 
     private fun <T : Parcelable> roundTrip(
         value: T,
