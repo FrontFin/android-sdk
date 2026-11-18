@@ -76,9 +76,6 @@ internal class LinkActivity : ComponentActivity() {
     private var loaded = false
     private var navigationFailed = false
 
-    /** The Link main frame finished loading; covers Link builds that never post `loaded`. */
-    private var pageFinished = false
-
     /** Uptime of the last Back that asked a loaded Link to close; `null` if none. */
     private var lastCloseRequestBackAt: Long? = null
 
@@ -330,10 +327,7 @@ internal class LinkActivity : ComponentActivity() {
             ) {
                 // Fallback for Link builds that never post `loaded`: the main-frame
                 // page finished, so stop the load timer.
-                if (getOrigin(url) == built.origin) {
-                    pageFinished = true
-                    main.removeCallbacks(loadTimeout)
-                }
+                if (getOrigin(url) == built.origin) main.removeCallbacks(loadTimeout)
             }
 
             override fun onReceivedError(
@@ -473,7 +467,7 @@ internal class LinkActivity : ComponentActivity() {
 
     /** Link has loaded and its page has not failed, so it can answer a close request. */
     private val linkReady: Boolean
-        get() = (loaded || pageFinished) && !navigationFailed
+        get() = loaded && !navigationFailed
 
     private val backCallback =
         object : OnBackPressedCallback(true) {

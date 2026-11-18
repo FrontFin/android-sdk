@@ -128,7 +128,7 @@ class LinkActivityTeardownTest {
     }
 
     @Test
-    fun `back press on a finished Link page that never posts loaded behaves like a loaded Link`() {
+    fun `back press after the page finished but before Link posts loaded closes at once`() {
         val activity = launch().get()
         val realWebView = findWebView(activity.window.decorView)
         val webView = shadowOf(realWebView)
@@ -136,13 +136,9 @@ class LinkActivityTeardownTest {
         webView.setCanGoBack(true)
 
         activity.onBackPressedDispatcher.onBackPressed()
-        assertEquals(1, webView.goBackInvocations)
 
-        webView.setCanGoBack(false)
-        activity.onBackPressedDispatcher.onBackPressed()
-        assertEquals(CLOSE_REQUESTED_SCRIPT, webView.lastEvaluatedJavascript)
-        looper.idleFor(Duration.ofSeconds(5))
-        assertNull(shadowOf(activity).resultIntent)
+        assertEquals(0, webView.goBackInvocations)
+        assertEquals(LinkResult.Exit(LinkExitStatus.CANCELED), result(activity))
     }
 
     @Test
