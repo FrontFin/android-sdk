@@ -14,7 +14,8 @@ link/                                  → com.meshpay:link (published AAR)
     LinkContract        ActivityResultContract<LinkConfiguration, LinkResult>
     LinkHandle          close()
     LinkSdk             VERSION
-    internal/           LinkActivity, LinkUrlBuilder, Origin, NavigationPolicy, BridgeMessage, ExternalLauncher
+    internal/           LinkActivity, ActiveSession, LinkUrlBuilder, Origin, NavigationPolicy, BridgeMessage,
+                        ExternalLauncher, LinkOverlays
   consumer-rules.pro
   api/link.api                         locked public API (binary-compatibility-validator)
 example/                               pasted-token sample app
