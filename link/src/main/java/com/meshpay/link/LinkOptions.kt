@@ -59,7 +59,7 @@ public enum class LinkTheme {
  * @property displayFiatCurrency ISO 4217 code (e.g. `"DKK"`) for the currency Link shows.
  */
 @Parcelize
-public class LinkOptions internal constructor(
+public class LinkOptions private constructor(
     public val environment: LinkEnvironment?,
     public val language: String?,
     public val theme: LinkTheme?,
