@@ -116,7 +116,7 @@ internal class LinkActivity : ComponentActivity() {
         // host app: the builder throws internally and is caught here (§2.2, §2.3).
         built =
             try {
-                buildLinkUrl(config.token, config.clientId, config.options, isSystemDark())
+                buildLinkUrl(config.token, config.clientId, config.options)
             } catch (e: IllegalArgumentException) {
                 deliverResult(
                     LinkResult.Error(LinkError(LinkErrorCode.LOAD_ERROR, e.message ?: "Invalid configuration.")),
@@ -125,7 +125,7 @@ internal class LinkActivity : ComponentActivity() {
                 finish()
                 return
             }
-        val dark = isDark(config)
+        val dark = isNativeDark(config.options.theme, config.token, isSystemDark())
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !dark
@@ -574,12 +574,6 @@ internal class LinkActivity : ComponentActivity() {
         main.removeCallbacks(graceTimeout)
         main.removeCallbacks(revealCloseButton)
         main.removeCallbacks(revealLoader)
-    }
-
-    private fun isDark(config: LinkConfiguration): Boolean {
-        val theme = config.options.theme
-        return theme == com.meshpay.link.LinkTheme.DARK ||
-            (theme != com.meshpay.link.LinkTheme.LIGHT && isSystemDark())
     }
 
     private fun isSystemDark(): Boolean {
