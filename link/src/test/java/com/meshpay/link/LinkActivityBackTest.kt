@@ -11,7 +11,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.meshpay.link.internal.CLOSE_GRACE_MS
 import com.meshpay.link.internal.LinkActivity
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -45,7 +44,7 @@ class LinkActivityBackTest {
         assertNull(shadowOf(activity).resultIntent)
 
         postFromLink(activity, """{"type":"close","payload":{"status":"canceled"}}""")
-        assertNotNull(shadowOf(activity).resultIntent)
+        assertEquals(LinkResult.Exit(LinkExitStatus.CANCELED), result(activity))
     }
 
     @Test
@@ -58,7 +57,7 @@ class LinkActivityBackTest {
         assertNull(shadowOf(activity).resultIntent)
         activity.onBackPressedDispatcher.onBackPressed()
 
-        assertNotNull(shadowOf(activity).resultIntent)
+        assertEquals(LinkResult.Exit(LinkExitStatus.CANCELED), result(activity))
         assertTrue(activity.isFinishing)
     }
 
@@ -77,7 +76,7 @@ class LinkActivityBackTest {
 
         looper.idleFor(Duration.ofMillis(1_000))
         activity.onBackPressedDispatcher.onBackPressed()
-        assertNotNull(shadowOf(activity).resultIntent)
+        assertEquals(LinkResult.Exit(LinkExitStatus.CANCELED), result(activity))
     }
 
     @Test
@@ -128,7 +127,7 @@ class LinkActivityBackTest {
 
         activity.onBackPressedDispatcher.onBackPressed()
 
-        assertNotNull(shadowOf(activity).resultIntent)
+        assertEquals(LinkResult.Exit(LinkExitStatus.CANCELED), result(activity))
         assertTrue(activity.isFinishing)
     }
 
@@ -146,7 +145,7 @@ class LinkActivityBackTest {
 
         activity.onBackPressedDispatcher.onBackPressed()
 
-        assertNotNull(shadowOf(activity).resultIntent)
+        assertEquals(LinkResult.Exit(LinkExitStatus.CANCELED), result(activity))
         assertTrue(activity.isFinishing)
     }
 
@@ -199,7 +198,7 @@ class LinkActivityBackTest {
         looper.idle()
         looper.idleFor(Duration.ofSeconds(5))
 
-        assertNotNull(shadowOf(activity).resultIntent)
+        assertEquals(LinkResult.Exit(LinkExitStatus.CANCELED), result(activity))
     }
 
     // --- Helpers -------------------------------------------------------------
