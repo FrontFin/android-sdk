@@ -2,7 +2,7 @@
 # The published SDK version. `BuildConfig.SDK_VERSION` is generated from this
 # entry and sent to Link as `meshSdkVersion`; it is never hand-written anywhere
 # else. The release workflow reads this same key (§2.11, §2.12).
-meshpay-link = "0.1.0"
+meshpay-link = "0.2.0"
 
 agp = "8.7.3"
 kotlin = "2.0.21"

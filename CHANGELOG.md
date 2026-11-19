@@ -4,7 +4,7 @@ All notable changes to the MeshPay Link Android SDK are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.2.0
 
 ### Added
 - `LinkSdk.VERSION` with the SDK version

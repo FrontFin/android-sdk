@@ -262,7 +262,7 @@ jobs:
           FAILED=true
           if [[ "$RELEASE_RESULT" == "success" ]]; then
             FAILED=false
-            MSG=":white_check_mark: *${NAME} released* — <${MAVEN_URL}|Maven Central> · <${RELEASE_URL}|GitHub release> · <${RUN_URL}|workflow run>"
+            MSG=":android: MeshPay Android SDK ${VERSION} released — <${MAVEN_URL}|Maven Central> · <${RELEASE_URL}|GitHub release> · <${RUN_URL}|workflow run>"
           elif [[ "$PUBLISH_RESULT" == "success" ]]; then
             # Maven Central versions are immutable: the artifact is out, only the
             # tag and GitHub release are missing. "Re-run failed jobs" re-runs
@@ -275,7 +275,12 @@ jobs:
           else
             MSG=":x: *${NAME} release ${PUBLISH_RESULT/failure/failed} at the Maven Central publish* — <${RUN_URL}|workflow run>"
           fi
-          # Line 2: ping the success or failure groups. Bots must use <!subteam^ID> — a plain @handle doesn't
+          # On success the PR title goes before the mentions.
+          if [[ "$FAILED" == "false" && -n "$PR_LINE" ]]; then
+            MSG="${MSG}${NL}> ${PR_LINE}"
+            PR_LINE=""
+          fi
+          # Ping the success or failure groups. Bots must use <!subteam^ID> — a plain @handle doesn't
           # notify. Each ID is validated so a bad var value can't inject other markup.
           if [[ "$FAILED" == "true" ]]; then
             IDS=$FAILURE_MENTION
