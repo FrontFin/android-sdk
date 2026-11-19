@@ -6,6 +6,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Added
+- `LinkSdk.VERSION` with the SDK version
+- `LinkOptions { … }` builder, e.g. `LinkOptions { environment(LinkEnvironment.SBX) }`
+
+### Changed
+- Public API is locked and checked in CI (`link/api/link.api`)
+- `LinkOptions`, `LinkConfiguration`, `LinkError`, `LinkResult.Exit` and `LinkResult.Error` are no longer data classes: no `copy()` or destructuring
+- `LinkOptions` is created only with `LinkOptions { … }` or `LinkOptions()`; its constructor is no longer public
+- `LinkOptions.environment` defaults to `null`, which still opens `PROD`
+- `LinkConfiguration.toString()` no longer includes the token
+- `LinkErrorCode`, `LinkExitStatus`, `LinkEnvironment` and `LinkTheme` may gain values in minor releases; handle unknown ones with `else`
+
 ### Security
 - A page from another origin can no longer stay full screen inside Link.
 

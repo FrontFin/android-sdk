@@ -56,7 +56,8 @@ internal fun buildLinkUrl(
     val trimmedClientId = clientId.trim()
     require(trimmedClientId.isNotEmpty()) { "clientId is required." }
 
-    val base = LINK_URLS.getValue(options.environment)
+    // Unset means production, like every other SDK.
+    val base = LINK_URLS.getValue(options.environment ?: LinkEnvironment.PROD)
 
     val params =
         buildList {

@@ -1,0 +1,173 @@
+public final class com/meshpay/link/LinkConfiguration : android/os/Parcelable {
+	public static final field CREATOR Landroid/os/Parcelable$Creator;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcom/meshpay/link/LinkOptions;)V
+	public final fun describeContents ()I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClientId ()Ljava/lang/String;
+	public final fun getOptions ()Lcom/meshpay/link/LinkOptions;
+	public final fun getToken ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun writeToParcel (Landroid/os/Parcel;I)V
+}
+
+public final class com/meshpay/link/LinkConfiguration$Creator : android/os/Parcelable$Creator {
+	public fun <init> ()V
+	public final fun createFromParcel (Landroid/os/Parcel;)Lcom/meshpay/link/LinkConfiguration;
+	public synthetic fun createFromParcel (Landroid/os/Parcel;)Ljava/lang/Object;
+	public final fun newArray (I)[Lcom/meshpay/link/LinkConfiguration;
+	public synthetic fun newArray (I)[Ljava/lang/Object;
+}
+
+public final class com/meshpay/link/LinkContract : androidx/activity/result/contract/ActivityResultContract {
+	public fun <init> ()V
+	public fun createIntent (Landroid/content/Context;Lcom/meshpay/link/LinkConfiguration;)Landroid/content/Intent;
+	public synthetic fun createIntent (Landroid/content/Context;Ljava/lang/Object;)Landroid/content/Intent;
+	public fun parseResult (ILandroid/content/Intent;)Lcom/meshpay/link/LinkResult;
+	public synthetic fun parseResult (ILandroid/content/Intent;)Ljava/lang/Object;
+}
+
+public final class com/meshpay/link/LinkEnvironment : java/lang/Enum {
+	public static final field DEV Lcom/meshpay/link/LinkEnvironment;
+	public static final field PROD Lcom/meshpay/link/LinkEnvironment;
+	public static final field SBX Lcom/meshpay/link/LinkEnvironment;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/meshpay/link/LinkEnvironment;
+	public static fun values ()[Lcom/meshpay/link/LinkEnvironment;
+}
+
+public final class com/meshpay/link/LinkError : android/os/Parcelable {
+	public static final field CREATOR Landroid/os/Parcelable$Creator;
+	public fun <init> (Lcom/meshpay/link/LinkErrorCode;Ljava/lang/String;)V
+	public final fun describeContents ()I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()Lcom/meshpay/link/LinkErrorCode;
+	public final fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun writeToParcel (Landroid/os/Parcel;I)V
+}
+
+public final class com/meshpay/link/LinkError$Creator : android/os/Parcelable$Creator {
+	public fun <init> ()V
+	public final fun createFromParcel (Landroid/os/Parcel;)Lcom/meshpay/link/LinkError;
+	public synthetic fun createFromParcel (Landroid/os/Parcel;)Ljava/lang/Object;
+	public final fun newArray (I)[Lcom/meshpay/link/LinkError;
+	public synthetic fun newArray (I)[Ljava/lang/Object;
+}
+
+public final class com/meshpay/link/LinkErrorCode : java/lang/Enum {
+	public static final field LOAD_ERROR Lcom/meshpay/link/LinkErrorCode;
+	public static final field LOAD_TIMEOUT Lcom/meshpay/link/LinkErrorCode;
+	public static final field SESSION_INTERRUPTED Lcom/meshpay/link/LinkErrorCode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/meshpay/link/LinkErrorCode;
+	public static fun values ()[Lcom/meshpay/link/LinkErrorCode;
+}
+
+public final class com/meshpay/link/LinkExitStatus : java/lang/Enum {
+	public static final field CANCELED Lcom/meshpay/link/LinkExitStatus;
+	public static final field SUCCESS Lcom/meshpay/link/LinkExitStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/meshpay/link/LinkExitStatus;
+	public static fun values ()[Lcom/meshpay/link/LinkExitStatus;
+}
+
+public final class com/meshpay/link/LinkHandle {
+	public static final field INSTANCE Lcom/meshpay/link/LinkHandle;
+	public final fun close ()V
+}
+
+public final class com/meshpay/link/LinkOptions : android/os/Parcelable {
+	public static final field CREATOR Landroid/os/Parcelable$Creator;
+	public final fun describeContents ()I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDisplayFiatCurrency ()Ljava/lang/String;
+	public final fun getEnvironment ()Lcom/meshpay/link/LinkEnvironment;
+	public final fun getIntegrationId ()Ljava/lang/String;
+	public final fun getLanguage ()Ljava/lang/String;
+	public final fun getTheme ()Lcom/meshpay/link/LinkTheme;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun writeToParcel (Landroid/os/Parcel;I)V
+}
+
+public final class com/meshpay/link/LinkOptions$Builder {
+	public final fun displayFiatCurrency (Ljava/lang/String;)V
+	public final fun environment (Lcom/meshpay/link/LinkEnvironment;)V
+	public final fun integrationId (Ljava/lang/String;)V
+	public final fun language (Ljava/lang/String;)V
+	public final fun theme (Lcom/meshpay/link/LinkTheme;)V
+}
+
+public final class com/meshpay/link/LinkOptions$Creator : android/os/Parcelable$Creator {
+	public fun <init> ()V
+	public final fun createFromParcel (Landroid/os/Parcel;)Lcom/meshpay/link/LinkOptions;
+	public synthetic fun createFromParcel (Landroid/os/Parcel;)Ljava/lang/Object;
+	public final fun newArray (I)[Lcom/meshpay/link/LinkOptions;
+	public synthetic fun newArray (I)[Ljava/lang/Object;
+}
+
+public final class com/meshpay/link/LinkOptionsKt {
+	public static final fun LinkOptions ()Lcom/meshpay/link/LinkOptions;
+	public static final fun LinkOptions (Lkotlin/jvm/functions/Function1;)Lcom/meshpay/link/LinkOptions;
+}
+
+public abstract interface class com/meshpay/link/LinkResult : android/os/Parcelable {
+}
+
+public final class com/meshpay/link/LinkResult$Error : com/meshpay/link/LinkResult {
+	public static final field CREATOR Landroid/os/Parcelable$Creator;
+	public fun <init> (Lcom/meshpay/link/LinkError;)V
+	public final fun describeContents ()I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lcom/meshpay/link/LinkError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun writeToParcel (Landroid/os/Parcel;I)V
+}
+
+public final class com/meshpay/link/LinkResult$Error$Creator : android/os/Parcelable$Creator {
+	public fun <init> ()V
+	public final fun createFromParcel (Landroid/os/Parcel;)Lcom/meshpay/link/LinkResult$Error;
+	public synthetic fun createFromParcel (Landroid/os/Parcel;)Ljava/lang/Object;
+	public final fun newArray (I)[Lcom/meshpay/link/LinkResult$Error;
+	public synthetic fun newArray (I)[Ljava/lang/Object;
+}
+
+public final class com/meshpay/link/LinkResult$Exit : com/meshpay/link/LinkResult {
+	public static final field CREATOR Landroid/os/Parcelable$Creator;
+	public fun <init> (Lcom/meshpay/link/LinkExitStatus;)V
+	public final fun describeContents ()I
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getStatus ()Lcom/meshpay/link/LinkExitStatus;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+	public final fun writeToParcel (Landroid/os/Parcel;I)V
+}
+
+public final class com/meshpay/link/LinkResult$Exit$Creator : android/os/Parcelable$Creator {
+	public fun <init> ()V
+	public final fun createFromParcel (Landroid/os/Parcel;)Lcom/meshpay/link/LinkResult$Exit;
+	public synthetic fun createFromParcel (Landroid/os/Parcel;)Ljava/lang/Object;
+	public final fun newArray (I)[Lcom/meshpay/link/LinkResult$Exit;
+	public synthetic fun newArray (I)[Ljava/lang/Object;
+}
+
+public final class com/meshpay/link/LinkSdk {
+	public static final field INSTANCE Lcom/meshpay/link/LinkSdk;
+	public static final field VERSION Ljava/lang/String;
+}
+
+public final class com/meshpay/link/LinkTheme : java/lang/Enum {
+	public static final field DARK Lcom/meshpay/link/LinkTheme;
+	public static final field LIGHT Lcom/meshpay/link/LinkTheme;
+	public static final field SYSTEM Lcom/meshpay/link/LinkTheme;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/meshpay/link/LinkTheme;
+	public static fun values ()[Lcom/meshpay/link/LinkTheme;
+}
+

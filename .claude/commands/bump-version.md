@@ -40,8 +40,13 @@ git diff <latest-tag>..HEAD -- \
   'link/src/main/java/com/meshpay/link/LinkResult.kt' \
   'link/src/main/java/com/meshpay/link/LinkError.kt' \
   'link/src/main/java/com/meshpay/link/LinkContract.kt' \
-  'link/src/main/java/com/meshpay/link/LinkHandle.kt'
+  'link/src/main/java/com/meshpay/link/LinkHandle.kt' \
+  'link/src/main/java/com/meshpay/link/LinkSdk.kt' \
+  'link/api/link.api'
 ```
+
+`link/api/link.api` is the locked public API (binary-compatibility-validator; CI
+runs `apiCheck`). Any line in its diff is a public API change, so read it first.
 
 Also capture the commit log for the changelog summary:
 
@@ -58,15 +63,21 @@ Analyse the diff against the public API (apply the highest matching level):
 #### MAJOR — any of:
 - A public type is **deleted or renamed** (`LinkConfiguration`, `LinkOptions`,
   `LinkResult`, `LinkExitStatus`, `LinkError`, `LinkErrorCode`, `LinkEnvironment`,
-  `LinkTheme`, `LinkContract`, `LinkHandle`)
+  `LinkTheme`, `LinkContract`, `LinkHandle`, `LinkSdk`)
+- A line is **removed or changed** in `link/api/link.api`
+- A new subtype of `LinkResult` (1.x promises it stays `Exit` | `Error`)
 - A public property/parameter is removed, or a **required** parameter is added
 - A value is removed from `LinkErrorCode`, `LinkExitStatus`, `LinkEnvironment` or `LinkTheme`
 - The entry point or callback/result semantics change in a breaking way
 - `minSdk` is raised
 
 #### MINOR — any of (and no MAJOR):
-- A new **optional** parameter or option is added
-- A new public type, or a new value in a public enum / sealed hierarchy
+- A new option or field: a new function on `LinkOptions.Builder` (and a getter on
+  `LinkOptions`), or a new constructor overload on `LinkConfiguration`,
+  `LinkError`, `LinkResult.Exit` or `LinkResult.Error` that keeps the existing
+  ones. `link.api` only gains lines.
+- A new public type, or a new value in `LinkErrorCode`, `LinkExitStatus`,
+  `LinkEnvironment` or `LinkTheme` (documented as extensible in 1.x)
 
 #### PATCH — everything else:
 - Bug fixes, internal refactors (anything under `internal/`), test additions
@@ -99,8 +110,21 @@ else. `BuildConfig.SDK_VERSION` and the release workflow both read this one valu
 
 ### Step 4 — Update CHANGELOG.md
 
-Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Prepend a new section at
-the very top:
+Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). PRs add their notes
+under a `## Unreleased` section at the top of the file, so first check for one:
+
+```bash
+grep -n '^## ' CHANGELOG.md | head -3
+```
+
+- **`## Unreleased` exists** — rename that heading to `## X.Y.Z`. Keep every entry under
+  it; add a bullet only for a consumer-visible change from the commit log that is not
+  already there. Do **not** prepend a second section: `release.yml` builds the GitHub
+  release notes from the lines between `## X.Y.Z` and the next `## ` heading, so notes
+  left under a separate `## Unreleased` would be missing from the release.
+- **No `## Unreleased`** — prepend a new section at the very top.
+
+Either way the result is one section for the release, directly under the file intro:
 
 ```markdown
 ## X.Y.Z
@@ -111,17 +135,22 @@ the very top:
 ### Changed
 - ...
 
+### Removed
+- ...
+
 ### Fixed
 - ...
 
-### Removed
+### Security
 - ...
 ```
 
 Rules:
-- No date — only the version number: `## X.Y.Z`.
-- Always include at least one `### Added` / `### Changed` / `### Fixed` / `### Removed`
-  sub-heading; omit empty ones.
+- No date — only the version number: `## X.Y.Z`. The heading must match exactly, or the
+  release workflow's changelog check fails.
+- No `## Unreleased` section is left behind; the next PR adds a fresh one.
+- Always include at least one `### Added` / `### Changed` / `### Removed` / `### Fixed` /
+  `### Security` sub-heading; omit empty ones, and keep them in that order.
 - One line per bullet, describing **what changed and why it matters** to a consumer, not
   internal implementation details.
 - `example/`, tests, `CLAUDE.md` and `README.md` changes go under **Changed** only if they
@@ -138,7 +167,7 @@ Reason: added `displayFiatCurrency` option to LinkOptions.
 
 Files updated:
   • gradle/libs.versions.toml   (meshpay-link)
-  • CHANGELOG.md                (new entry prepended)
+  • CHANGELOG.md                (## Unreleased renamed to ## 0.2.0)
 ```
 
 Then ask whether to commit. On yes, stage only the two files:
