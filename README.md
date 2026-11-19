@@ -2,15 +2,19 @@
 
 Opens the hosted [Mesh Link](https://link.meshpay.com) UI full screen in a WebView.
 
+[![Maven Central](https://img.shields.io/maven-central/v/com.meshpay/link)](https://central.sonatype.com/artifact/com.meshpay/link)
+
 Published on Maven Central as **`com.meshpay:link`**.
 
 ## Install
+
+Replace `<version>` with the latest version shown on the badge above.
 
 ```kotlin
 // settings.gradle.kts → dependencyResolutionManagement { repositories { mavenCentral() } }
 
 dependencies {
-    implementation("com.meshpay:link:0.1.0")
+    implementation("com.meshpay:link:<version>")
 }
 ```
 
