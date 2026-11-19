@@ -28,7 +28,10 @@ class LinkContractTest {
         assertEquals(LinkResult.Exit(LinkExitStatus.CANCELED), LinkContract().parseResult(0, null))
     }
 
+    // minSdk, API 33 (where IntentCompat avoids the buggy typed overload) and the
+    // current target, which uses the typed overload.
     @Test
+    @Config(sdk = [24, 33, 35])
     fun `result and configuration survive the Intent crossing a process boundary`() {
         val exit = LinkResult.Exit(LinkExitStatus.SUCCESS)
         val error = LinkResult.Error(LinkError(LinkErrorCode.LOAD_TIMEOUT, "timeout"))
