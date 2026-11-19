@@ -58,6 +58,6 @@ internal class ExternalLauncher(private val context: Context) {
     }
 
     internal companion object {
-        const val LOG_TAG: String = "MeshPayLink"
+        const val LOG_TAG: String = "MeshLink"
     }
 }

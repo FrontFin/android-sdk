@@ -256,13 +256,13 @@ jobs:
           fi
 
           # VERSION is empty when the version/changelog check itself failed.
-          NAME="MeshPay Link Android SDK${VERSION:+ ${VERSION}}"
+          NAME="Mesh Link Android SDK${VERSION:+ ${VERSION}}"
           MAVEN_URL="https://central.sonatype.com/artifact/${GROUP_ID}/${ARTIFACT_ID}/${VERSION}"
           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${VERSION}"
           FAILED=true
           if [[ "$RELEASE_RESULT" == "success" ]]; then
             FAILED=false
-            MSG=":android: MeshPay Android SDK ${VERSION} released — <${MAVEN_URL}|Maven Central> · <${RELEASE_URL}|GitHub release> · <${RUN_URL}|workflow run>"
+            MSG=":android: Mesh Link Android SDK ${VERSION} released — <${MAVEN_URL}|Maven Central> · <${RELEASE_URL}|GitHub release> · <${RUN_URL}|workflow run>"
           elif [[ "$PUBLISH_RESULT" == "success" ]]; then
             # Maven Central versions are immutable: the artifact is out, only the
             # tag and GitHub release are missing. "Re-run failed jobs" re-runs

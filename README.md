@@ -1,8 +1,6 @@
-# MeshPay Link Android SDK
+# Mesh Link Android SDK
 
-Opens the hosted [MeshPay Link](https://link.meshpay.com) UI full screen in a
-WebView, as the Android peer of the MeshPay React Native, iOS and Flutter SDKs.
-One public API, one Link URL contract and one bridge protocol across all of them.
+Opens the hosted [Mesh Link](https://link.meshpay.com) UI full screen in a WebView.
 
 Published on Maven Central as **`com.meshpay:link`**.
 

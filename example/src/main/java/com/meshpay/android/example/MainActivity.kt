@@ -96,7 +96,7 @@ private fun LinkDemoScreen() {
     val launcher = rememberLauncherForActivityResult(LinkContract()) { result = it }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("MeshPay Link") }) },
+        topBar = { TopAppBar(title = { Text("Mesh Link Android") }) },
     ) { insets ->
         Column(
             modifier = Modifier
