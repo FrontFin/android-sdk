@@ -1,6 +1,10 @@
 package com.meshpay.link
 
+import android.content.Intent
+import android.os.Parcel
+import androidx.core.content.IntentCompat
 import androidx.test.core.app.ApplicationProvider
+import com.meshpay.link.internal.LinkActivity
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,6 +28,30 @@ class LinkContractTest {
         assertEquals(LinkResult.Exit(LinkExitStatus.CANCELED), LinkContract().parseResult(0, null))
     }
 
+    // minSdk, API 33 (where IntentCompat avoids the buggy typed overload) and the
+    // current target, which uses the typed overload.
+    @Test
+    @Config(sdk = [24, 33, 35])
+    fun `result and configuration survive the Intent crossing a process boundary`() {
+        val exit = LinkResult.Exit(LinkExitStatus.SUCCESS)
+        val error = LinkResult.Error(LinkError(LinkErrorCode.LOAD_TIMEOUT, "timeout"))
+        assertEquals(
+            exit,
+            LinkContract().parseResult(-1, parcelled(Intent().putExtra(LinkActivity.EXTRA_RESULT, exit))),
+        )
+        assertEquals(
+            error,
+            LinkContract().parseResult(-1, parcelled(Intent().putExtra(LinkActivity.EXTRA_RESULT, error))),
+        )
+
+        val config = LinkConfiguration("tok", "cid", LinkOptions { environment(LinkEnvironment.SBX) })
+        val launch = parcelled(LinkContract().createIntent(context, config))
+        assertEquals(
+            config,
+            IntentCompat.getParcelableExtra(launch, LinkActivity.EXTRA_CONFIG, LinkConfiguration::class.java),
+        )
+    }
+
     @Test
     fun `blank token or clientId does not throw at construction`() {
         // Blank values are reported as load-error by LinkActivity, never thrown
@@ -32,5 +60,17 @@ class LinkContractTest {
         val blankClientId = LinkConfiguration("tok", "   ")
         assertEquals("  ", blankToken.token)
         assertEquals("   ", blankClientId.clientId)
+    }
+
+    /** Writes the Intent to a Parcel and reads it back, as Android does between processes. */
+    private fun parcelled(intent: Intent): Intent {
+        val parcel = Parcel.obtain()
+        try {
+            intent.writeToParcel(parcel, 0)
+            parcel.setDataPosition(0)
+            return Intent.CREATOR.createFromParcel(parcel)
+        } finally {
+            parcel.recycle()
+        }
     }
 }
