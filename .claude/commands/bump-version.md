@@ -64,8 +64,7 @@ Analyse the diff against the public API (apply the highest matching level):
 - A public type is **deleted or renamed** (`LinkConfiguration`, `LinkOptions`,
   `LinkResult`, `LinkExitStatus`, `LinkError`, `LinkErrorCode`, `LinkEnvironment`,
   `LinkTheme`, `LinkContract`, `LinkHandle`, `LinkSdk`)
-- A line is **removed or changed** in `link/api/link.api`, except the one case under
-  MINOR below
+- A line is **removed or changed** in `link/api/link.api`
 - A new subtype of `LinkResult` (1.x promises it stays `Exit` | `Error`)
 - A public property/parameter is removed, or a **required** parameter is added
 - A value is removed from `LinkErrorCode`, `LinkExitStatus`, `LinkEnvironment` or `LinkTheme`

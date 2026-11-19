@@ -44,10 +44,14 @@ test-vectors/                          link-url.json, navigation.json (shared ac
   that touches it must be deliberate: run `./gradlew link:apiDump` and commit the
   file. Public types are plain classes, not data classes (no `copy`/`componentN`
   to break), and public constructors have no default arguments (no hidden
-  `DefaultConstructorMarker` constructor). A new option is a new
-  `LinkOptions.Builder` function (not a `var`); a new field on
-  `LinkConfiguration`, `LinkError`, `LinkResult.Exit` or `LinkResult.Error` is a
-  new constructor overload, keeping the existing ones.
+  `DefaultConstructorMarker` constructor). The SDK is Kotlin-only; Java is not a
+  supported caller. `LinkOptions`' constructor is `internal` on purpose: it is
+  public in bytecode but not in `link.api`. Don't make it `private`: Kotlin then
+  adds a synthetic `DefaultConstructorMarker` accessor to `link.api` that changes
+  with every new option. A new option is a new `LinkOptions.Builder` function
+  (not a `var`); a new field on `LinkConfiguration`, `LinkError`,
+  `LinkResult.Exit` or `LinkResult.Error` is a new constructor overload, keeping
+  the existing ones.
   `LinkErrorCode`/`LinkExitStatus`/`LinkEnvironment`/`LinkTheme` may gain values
   in 1.x; `LinkResult` stays `Exit` | `Error`.
 

@@ -72,15 +72,6 @@ val options = LinkOptions {
 }
 ```
 
-From Java, use `LinkOptions.Builder`:
-
-```java
-LinkOptions options = new LinkOptions.Builder()
-    .environment(LinkEnvironment.SBX)
-    .displayFiatCurrency("DKK")
-    .build();
-```
-
 | Option | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `environment` | `LinkEnvironment?` | unset (`PROD`) | `PROD`, `SBX` or `DEV`. Unset opens production. |

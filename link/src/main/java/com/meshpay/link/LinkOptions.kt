@@ -29,23 +29,13 @@ public enum class LinkTheme {
 
 /**
  * Optional Link settings. Every field is optional and defaults to `null` (unset).
- *
- * From Kotlin, create one with the [LinkOptions] builder function:
+ * Create one with the [LinkOptions] builder function:
  *
  * ```kotlin
  * val options = LinkOptions {
  *     environment(LinkEnvironment.SBX)
  *     theme(LinkTheme.SYSTEM)
  * }
- * ```
- *
- * From Java, use [Builder]:
- *
- * ```java
- * LinkOptions options = new LinkOptions.Builder()
- *     .environment(LinkEnvironment.SBX)
- *     .theme(LinkTheme.SYSTEM)
- *     .build();
  * ```
  *
  * The constructor is not public: a new option is a new [Builder] function, so
@@ -59,7 +49,7 @@ public enum class LinkTheme {
  * @property displayFiatCurrency ISO 4217 code (e.g. `"DKK"`) for the currency Link shows.
  */
 @Parcelize
-public class LinkOptions private constructor(
+public class LinkOptions internal constructor(
     public val environment: LinkEnvironment?,
     public val language: String?,
     public val theme: LinkTheme?,
@@ -67,16 +57,15 @@ public class LinkOptions private constructor(
     public val displayFiatCurrency: String?,
 ) : Parcelable {
     /**
-     * Builds [LinkOptions]. Every option starts unset (`null`); call a function to
-     * set it. Each function returns the builder, so calls chain from Java; in the
-     * Kotlin `LinkOptions { … }` block the return value is simply ignored.
+     * Receiver of the [LinkOptions] builder function. Every option starts unset
+     * (`null`); call a function to set it.
      *
      * Options are set with functions, not assignable properties, on purpose:
-     * inside the Kotlin block, `environment = environment` would silently assign a
+     * inside the block, `environment = environment` would silently assign a
      * same-named local variable to itself, while `environment(environment)`
      * always reaches the builder.
      */
-    public class Builder {
+    public class Builder internal constructor() {
         private var environment: LinkEnvironment? = null
         private var language: String? = null
         private var theme: LinkTheme? = null
@@ -84,22 +73,31 @@ public class LinkOptions private constructor(
         private var displayFiatCurrency: String? = null
 
         /** Which hosted deployment to open. `null` opens [LinkEnvironment.PROD]. */
-        public fun environment(value: LinkEnvironment?): Builder = apply { environment = value }
+        public fun environment(value: LinkEnvironment?) {
+            environment = value
+        }
 
         /** UI language as a locale code (e.g. `"es"`). */
-        public fun language(value: String?): Builder = apply { language = value }
+        public fun language(value: String?) {
+            language = value
+        }
 
         /** How Link is themed. [LinkTheme.SYSTEM] follows the device appearance. */
-        public fun theme(value: LinkTheme?): Builder = apply { theme = value }
+        public fun theme(value: LinkTheme?) {
+            theme = value
+        }
 
         /** Pre-selects a wallet integration. */
-        public fun integrationId(value: String?): Builder = apply { integrationId = value }
+        public fun integrationId(value: String?) {
+            integrationId = value
+        }
 
         /** ISO 4217 code (e.g. `"DKK"`) for the currency Link shows. */
-        public fun displayFiatCurrency(value: String?): Builder = apply { displayFiatCurrency = value }
+        public fun displayFiatCurrency(value: String?) {
+            displayFiatCurrency = value
+        }
 
-        /** Creates the [LinkOptions]. The builder can keep being used afterwards. */
-        public fun build(): LinkOptions =
+        internal fun build(): LinkOptions =
             LinkOptions(
                 environment,
                 language,
@@ -132,11 +130,7 @@ public class LinkOptions private constructor(
             "integrationId=$integrationId, displayFiatCurrency=$displayFiatCurrency)"
 }
 
-/**
- * [LinkOptions] with every option unset: production, Link's own defaults.
- * Kotlin only; from Java use `new LinkOptions.Builder().build()`.
- */
-@JvmSynthetic
+/** [LinkOptions] with every option unset: production, Link's own defaults. */
 public fun LinkOptions(): LinkOptions = LinkOptions.Builder().build()
 
 /**
@@ -148,8 +142,5 @@ public fun LinkOptions(): LinkOptions = LinkOptions.Builder().build()
  *     language("es")
  * }
  * ```
- *
- * Kotlin only; from Java use [LinkOptions.Builder].
  */
-@JvmSynthetic
 public fun LinkOptions(block: LinkOptions.Builder.() -> Unit): LinkOptions = LinkOptions.Builder().apply(block).build()
