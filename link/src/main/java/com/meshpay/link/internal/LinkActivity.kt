@@ -618,6 +618,9 @@ internal class LinkActivity : ComponentActivity() {
         private const val EXTRA_CONFIG = "com.meshpay.link.CONFIG"
         private const val EXTRA_RESULT = "com.meshpay.link.RESULT"
 
+        /** After a Back that asks a loaded Link to close, a second Back within this window closes it at once. */
+        private const val BACK_EXIT_WINDOW_MS: Long = 2_000L
+
         fun newIntent(
             context: Context,
             config: LinkConfiguration,

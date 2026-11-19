@@ -11,9 +11,6 @@ internal const val LINK_LOAD_TIMEOUT_MS: Long = 15_000L
 /** How long a host-initiated close waits for Link's own `close` before tearing down. */
 internal const val CLOSE_GRACE_MS: Long = 1_000L
 
-/** After a Back that asks a loaded Link to close, a second Back within this window closes it at once. */
-internal const val BACK_EXIT_WINDOW_MS: Long = 2_000L
-
 /** How long the native close button stays hidden after a session opens. */
 internal const val CLOSE_BUTTON_DELAY_MS: Long = 2_000L
 
