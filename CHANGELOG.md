@@ -18,6 +18,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `LinkConfiguration.toString()` no longer includes the token
 - `LinkErrorCode`, `LinkExitStatus`, `LinkEnvironment` and `LinkTheme` may gain values in minor releases; handle unknown ones with `else`
 
+### Fixed
+- Back no longer closes Link's exit prompt after 1 s. A second Back within 2 s closes Link.
+- Back closes Link at once before it loads or after a page fails to load.
+
 ### Security
 - A page from another origin can no longer stay full screen inside Link.
 
