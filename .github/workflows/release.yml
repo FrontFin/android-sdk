@@ -262,7 +262,7 @@ jobs:
           FAILED=true
           if [[ "$RELEASE_RESULT" == "success" ]]; then
             FAILED=false
-            MSG=":android: Mesh Link Android SDK ${VERSION} released — <${MAVEN_URL}|Maven Central> · <${RELEASE_URL}|GitHub release> · <${RUN_URL}|workflow run>"
+            MSG=":android: *${NAME} released* —<${MAVEN_URL}|Maven Central> · <${RELEASE_URL}|GitHub release> · <${RUN_URL}|workflow run>"
           elif [[ "$PUBLISH_RESULT" == "success" ]]; then
             # Maven Central versions are immutable: the artifact is out, only the
             # tag and GitHub release are missing. "Re-run failed jobs" re-runs
