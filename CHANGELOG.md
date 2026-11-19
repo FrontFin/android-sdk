@@ -4,6 +4,13 @@ All notable changes to the Mesh Link Android SDK are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.0.0
+
+### Changed
+- First stable release. The public API (`LinkContract`, `LinkConfiguration`, `LinkOptions`, `LinkHandle`, `LinkResult`, `LinkError`, `LinkSdk` and the exported types) is locked in `link/api/link.api` and now follows Semantic Versioning: breaking changes ship only in a new major version.
+- `LinkErrorCode`, `LinkExitStatus`, `LinkEnvironment` and `LinkTheme` may gain new values in minor releases. Handle unknown values, for example with an `else` branch.
+- The SDK is now named Mesh Link Android SDK, matching the other Mesh Link SDKs. The Maven coordinates `com.meshpay:link` are unchanged.
+
 ## 0.2.0
 
 ### Added
