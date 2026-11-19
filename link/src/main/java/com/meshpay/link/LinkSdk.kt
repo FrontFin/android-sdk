@@ -1,6 +1,6 @@
 package com.meshpay.link
 
-/** Information about the MeshPay Link SDK itself. */
+/** Information about the Mesh Link Android SDK itself. */
 public object LinkSdk {
     /**
      * The SDK version (`MAJOR.MINOR.PATCH`), the same value sent to Link. Include

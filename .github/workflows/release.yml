@@ -207,11 +207,11 @@ jobs:
         id: message
         # Composes the full message (success OR failure) so the post step below
         # has no duplicated success/failure condition. Line 1 = status + version +
-        # links; line 2 = the RELEASE_SUCCESS_MENTION or RELEASE_FAILURE_MENTION
-        # groups; last line = a Slack blockquote with the PR title + a clickable
-        # #NN, taken from the push event's head-commit subject (squash merges read
-        # "<title> (#NN)"). head_commit is null on workflow_dispatch, so the
-        # blockquote is dropped there.
+        # links; line 2 = a Slack blockquote with the PR title + a clickable #NN,
+        # taken from the push event's head-commit subject (squash merges read
+        # "<title> (#NN)"); last line = the RELEASE_SUCCESS_MENTION or
+        # RELEASE_FAILURE_MENTION groups. head_commit is null on workflow_dispatch,
+        # so the blockquote is dropped there.
         #
         # continue-on-error: a hiccup here must never turn a green release red. If
         # this script exits non-zero the output is empty, the post step's own input
@@ -256,13 +256,13 @@ jobs:
           fi
 
           # VERSION is empty when the version/changelog check itself failed.
-          NAME="MeshPay Link Android SDK${VERSION:+ ${VERSION}}"
+          NAME="Mesh Link Android SDK${VERSION:+ ${VERSION}}"
           MAVEN_URL="https://central.sonatype.com/artifact/${GROUP_ID}/${ARTIFACT_ID}/${VERSION}"
           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${VERSION}"
           FAILED=true
           if [[ "$RELEASE_RESULT" == "success" ]]; then
             FAILED=false
-            MSG=":android: MeshPay Android SDK ${VERSION} released — <${MAVEN_URL}|Maven Central> · <${RELEASE_URL}|GitHub release> · <${RUN_URL}|workflow run>"
+            MSG=":android: *${NAME} released* —<${MAVEN_URL}|Maven Central> · <${RELEASE_URL}|GitHub release> · <${RUN_URL}|workflow run>"
           elif [[ "$PUBLISH_RESULT" == "success" ]]; then
             # Maven Central versions are immutable: the artifact is out, only the
             # tag and GitHub release are missing. "Re-run failed jobs" re-runs
@@ -275,10 +275,9 @@ jobs:
           else
             MSG=":x: *${NAME} release ${PUBLISH_RESULT/failure/failed} at the Maven Central publish* — <${RUN_URL}|workflow run>"
           fi
-          # On success the PR title goes before the mentions.
-          if [[ "$FAILED" == "false" && -n "$PR_LINE" ]]; then
+          # Line 2: Slack blockquote with the PR title whenever we have a subject.
+          if [[ -n "$PR_LINE" ]]; then
             MSG="${MSG}${NL}> ${PR_LINE}"
-            PR_LINE=""
           fi
           # Ping the success or failure groups. Bots must use <!subteam^ID> — a plain @handle doesn't
           # notify. Each ID is validated so a bad var value can't inject other markup.
@@ -295,10 +294,6 @@ jobs:
           done
           if [[ -n "$MENTIONS" ]]; then
             MSG="${MSG}${NL}${MENTIONS}"
-          fi
-          # Last line: Slack blockquote with the PR title whenever we have a subject.
-          if [[ -n "$PR_LINE" ]]; then
-            MSG="${MSG}${NL}> ${PR_LINE}"
           fi
           {
             echo "message<<__MSG_EOF__"
