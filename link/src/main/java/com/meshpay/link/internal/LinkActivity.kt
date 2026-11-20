@@ -126,6 +126,11 @@ internal class LinkActivity : ComponentActivity() {
                 return
             }
         val dark = isNativeDark(config.options.theme, config.token, isSystemDark())
+        // The WebView reports `prefers-color-scheme` from this Activity's theme, not the device
+        // (targetSdk 33+), and Link falls back to it when neither `th` nor the token sets a theme.
+        // The manifest's dark DeviceDefault theme made that always dark, so Link turned dark on a
+        // light device. Match the theme to the native one, before the window and WebView exist.
+        setTheme(activityTheme(dark))
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !dark
@@ -575,6 +580,13 @@ internal class LinkActivity : ComponentActivity() {
         main.removeCallbacks(revealCloseButton)
         main.removeCallbacks(revealLoader)
     }
+
+    private fun activityTheme(dark: Boolean): Int =
+        if (dark) {
+            android.R.style.Theme_DeviceDefault_NoActionBar
+        } else {
+            android.R.style.Theme_DeviceDefault_Light_NoActionBar
+        }
 
     private fun isSystemDark(): Boolean {
         val mask = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
