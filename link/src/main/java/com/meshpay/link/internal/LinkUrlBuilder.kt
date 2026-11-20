@@ -40,7 +40,6 @@ internal data class BuiltLinkUrl(val href: String, val origin: String)
  * the order `token`, `clientId`, `lng`, `th`, `integrationId`, `fiatCur`, each
  * only when set, form-encoded.
  *
- * @param isSystemDark the device appearance, used to resolve [LinkTheme.SYSTEM].
  * @throws IllegalArgumentException when `token` or `clientId` is blank, with a
  *   message naming the field. The public API never surfaces this throw:
  *   [LinkActivity] catches it and reports `load-error` instead (§2.3).
@@ -49,7 +48,6 @@ internal fun buildLinkUrl(
     token: String,
     clientId: String,
     options: LinkOptions,
-    isSystemDark: Boolean,
 ): BuiltLinkUrl {
     val trimmedToken = token.trim()
     require(trimmedToken.isNotEmpty()) { "token is required." }
@@ -64,7 +62,8 @@ internal fun buildLinkUrl(
             add("token" to trimmedToken)
             add("clientId" to trimmedClientId)
             options.language?.let { add("lng" to it) }
-            options.theme?.let { add("th" to resolveTheme(it, isSystemDark)) }
+            // Pass the theme through unchanged, including SYSTEM: Link resolves "system" itself.
+            options.theme?.let { add("th" to themeParam(it)) }
             options.integrationId?.let { add("integrationId" to it) }
             options.displayFiatCurrency?.let { add("fiatCur" to it) }
         }
@@ -75,15 +74,12 @@ internal fun buildLinkUrl(
     return BuiltLinkUrl(href, origin)
 }
 
-/** `light` or `dark`; `system` follows the device appearance. */
-internal fun resolveTheme(
-    theme: LinkTheme,
-    isSystemDark: Boolean,
-): String =
+/** The `th` value for [theme]: `light`, `dark` or `system`. */
+internal fun themeParam(theme: LinkTheme): String =
     when (theme) {
         LinkTheme.LIGHT -> "light"
         LinkTheme.DARK -> "dark"
-        LinkTheme.SYSTEM -> if (isSystemDark) "dark" else "light"
+        LinkTheme.SYSTEM -> "system"
     }
 
 private fun appendQuery(

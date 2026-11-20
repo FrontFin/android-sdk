@@ -116,7 +116,7 @@ internal class LinkActivity : ComponentActivity() {
         // host app: the builder throws internally and is caught here (§2.2, §2.3).
         built =
             try {
-                buildLinkUrl(config.token, config.clientId, config.options, isSystemDark())
+                buildLinkUrl(config.token, config.clientId, config.options)
             } catch (e: IllegalArgumentException) {
                 deliverResult(
                     LinkResult.Error(LinkError(LinkErrorCode.LOAD_ERROR, e.message ?: "Invalid configuration.")),
@@ -125,7 +125,12 @@ internal class LinkActivity : ComponentActivity() {
                 finish()
                 return
             }
-        val dark = isDark(config)
+        val dark = isNativeDark(config.options.theme, config.token, isSystemDark())
+        // The WebView reports `prefers-color-scheme` from this Activity's theme, not the device
+        // (targetSdk 33+), and Link falls back to it when neither `th` nor the token sets a theme.
+        // The manifest's dark DeviceDefault theme made that always dark, so Link turned dark on a
+        // light device. Match the theme to the native one, before the window and WebView exist.
+        setTheme(activityTheme(dark))
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !dark
@@ -576,11 +581,12 @@ internal class LinkActivity : ComponentActivity() {
         main.removeCallbacks(revealLoader)
     }
 
-    private fun isDark(config: LinkConfiguration): Boolean {
-        val theme = config.options.theme
-        return theme == com.meshpay.link.LinkTheme.DARK ||
-            (theme != com.meshpay.link.LinkTheme.LIGHT && isSystemDark())
-    }
+    private fun activityTheme(dark: Boolean): Int =
+        if (dark) {
+            android.R.style.Theme_DeviceDefault_NoActionBar
+        } else {
+            android.R.style.Theme_DeviceDefault_Light_NoActionBar
+        }
 
     private fun isSystemDark(): Boolean {
         val mask = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
