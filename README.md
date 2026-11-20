@@ -78,7 +78,7 @@ val options = LinkOptions {
 | --- | --- | --- | --- |
 | `environment` | `LinkEnvironment?` | unset (`PROD`) | `PROD`, `SBX` or `DEV`. Unset opens production. |
 | `language` | `String?` | unset | Locale code, sent to Link as `lng`. |
-| `theme` | `LinkTheme?` | unset | `LIGHT` / `DARK` force that mode. `SYSTEM` or unset uses your portal styling, then the device appearance. |
+| `theme` | `LinkTheme?` | unset | `LIGHT`, `DARK` or `SYSTEM` (resolved from the device appearance at open time). |
 | `integrationId` | `String?` | unset | Pre-selects a wallet integration. |
 | `displayFiatCurrency` | `String?` | unset | ISO 4217 code (e.g. `"DKK"`). |
 
