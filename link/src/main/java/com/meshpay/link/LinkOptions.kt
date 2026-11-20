@@ -44,7 +44,8 @@ public enum class LinkTheme {
  *
  * @property environment which hosted deployment to open. `null` opens [LinkEnvironment.PROD].
  * @property language UI language as a locale code (e.g. `"es"`).
- * @property theme how Link is themed. [LinkTheme.SYSTEM] follows the device appearance.
+ * @property theme how Link is themed. [LinkTheme.LIGHT] / [LinkTheme.DARK] force that mode.
+ *   [LinkTheme.SYSTEM] or unset uses your portal styling, then the device appearance.
  * @property integrationId pre-selects a wallet integration.
  * @property displayFiatCurrency ISO 4217 code (e.g. `"DKK"`) for the currency Link shows.
  */
@@ -82,7 +83,10 @@ public class LinkOptions internal constructor(
             language = value
         }
 
-        /** How Link is themed. [LinkTheme.SYSTEM] follows the device appearance. */
+        /**
+         * How Link is themed. [LinkTheme.LIGHT] / [LinkTheme.DARK] force that mode.
+         * [LinkTheme.SYSTEM] or unset uses your portal styling, then the device appearance.
+         */
         public fun theme(value: LinkTheme?) {
             theme = value
         }
