@@ -21,7 +21,7 @@ naming:
     # Factory-style internal helpers (e.g. Close(...)) read better capitalised.
     functionPattern: '[a-zA-Z][a-zA-Z0-9]*'
   MatchingDeclarationName:
-    # The solution design (§5.1) mandates descriptive file names that group a
+    # Files take descriptive names that group a
     # type with its related top-level functions (BridgeMessage.kt → LinkMessage,
     # NavigationPolicy.kt → NavigationDecision), so the file name deliberately
     # does not match the single type.

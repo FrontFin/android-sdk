@@ -29,9 +29,8 @@ On merge, [`release.yml`](.github/workflows/release.yml) does the rest:
 - `release` — `gh release create X.Y.Z --target <release commit>` (this creates
   the tag), with notes from the changelog section and a compare link.
 - `notify` — posts the outcome (released, published but no GitHub release, or
-  which step failed) to Slack through `FrontFin/cicd-templates`'
-  `slack/post-message` action. A Slack failure never turns the release red; the run summary says whether it
-  posted.
+  which step failed) to Slack through the `chat.postMessage` API. A Slack
+  failure never turns the release red; the run summary says whether it posted.
 
 ## Secrets and variables
 

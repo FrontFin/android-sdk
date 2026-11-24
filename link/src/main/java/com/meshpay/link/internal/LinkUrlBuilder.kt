@@ -42,7 +42,7 @@ internal data class BuiltLinkUrl(val href: String, val origin: String)
  *
  * @throws IllegalArgumentException when `token` or `clientId` is blank, with a
  *   message naming the field. The public API never surfaces this throw:
- *   [LinkActivity] catches it and reports `load-error` instead (§2.3).
+ *   [LinkActivity] catches it and reports `load-error` instead.
  */
 internal fun buildLinkUrl(
     token: String,

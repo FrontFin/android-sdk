@@ -14,7 +14,7 @@ import androidx.core.net.toUri
  * there is a fallback URL.
  *
  * The URL is chosen by web content, so a failed launch must never escape into
- * the WebView callback and crash the host app (SR-6, PRG-2290).
+ * the WebView callback and crash the host app.
  */
 internal class ExternalLauncher(private val context: Context) {
     /** @return `true` when the primary or the fallback URL was handed to the OS. */
@@ -47,7 +47,7 @@ internal class ExternalLauncher(private val context: Context) {
      * Tells the integrator why a wallet link did nothing, without crashing the
      * host. Only when the host app is debuggable: the SDK ships as a release AAR,
      * so its own `BuildConfig.DEBUG` is always false. Logs the exception class
-     * only, never its message, which can embed the Intent and with it the URL (§2.7).
+     * only, never its message, which can embed the Intent and with it the URL.
      */
     private fun logLaunchFailure(
         target: String,

@@ -5,7 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The second origin gate for main-frame documents (PRG-2294). */
+/** The second origin gate for main-frame documents. */
 class ForeignTopFrameDocumentTest {
     private val origin = "https://link.meshpay.com"
 

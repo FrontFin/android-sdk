@@ -21,7 +21,7 @@ import com.meshpay.link.internal.LinkActivity
  *
  * The result is delivered exactly once and survives host Activity recreation. A
  * blank `token` or `clientId` is reported as [LinkResult.Error] with
- * [LinkErrorCode.LOAD_ERROR], not thrown (§2.2).
+ * [LinkErrorCode.LOAD_ERROR], not thrown.
  */
 public class LinkContract : ActivityResultContract<LinkConfiguration, LinkResult>() {
     override fun createIntent(

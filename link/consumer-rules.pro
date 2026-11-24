@@ -1,4 +1,4 @@
-# Rules shipped to consumers of com.meshpay:link (§2.7).
+# Rules shipped to consumers of com.meshpay:link.
 
 # The @JavascriptInterface fallback bridge (old WebViews) is called by name from
 # injected JavaScript, so its method must survive R8/ProGuard.

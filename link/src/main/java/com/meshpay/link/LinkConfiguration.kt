@@ -9,7 +9,7 @@ import kotlinx.parcelize.Parcelize
  *
  * `@Parcelize` so it survives the Intent to the SDK's Activity. The token
  * travels only through the Intent and is never written to `SavedStateHandle` or
- * any other persisted store (§2.7). [toString] never includes the token, so the
+ * any other persisted store. [toString] never includes the token, so the
  * configuration is safe to log.
  *
  * The constructors have no default arguments on purpose: a new field is added
@@ -18,7 +18,7 @@ import kotlinx.parcelize.Parcelize
  *
  * A blank `token` or `clientId` is not thrown here: Link is launched and the
  * session ends immediately with [LinkResult.Error] carrying [LinkErrorCode.LOAD_ERROR]
- * and a message naming the field (§2.2, §2.3).
+ * and a message naming the field.
  *
  * @property token session token from `POST /v2/sessions`, minted by your backend.
  *   A single-use exchange code, not a JWT. Trimmed; a blank value yields `load-error`.
@@ -48,6 +48,6 @@ public class LinkConfiguration(
         return result
     }
 
-    /** Never includes the token: it is a single-use credential (§2.7). */
+    /** Never includes the token: it is a single-use credential. */
     override fun toString(): String = "LinkConfiguration(token=<redacted>, clientId=$clientId, options=$options)"
 }

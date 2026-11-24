@@ -11,7 +11,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Contract plumbing and the blank-argument guard (§2.2, §5.2). */
+/** Contract plumbing and the blank-argument guard. */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class LinkContractTest {
@@ -55,7 +55,7 @@ class LinkContractTest {
     @Test
     fun `blank token or clientId does not throw at construction`() {
         // Blank values are reported as load-error by LinkActivity, never thrown
-        // to the host (§2.2); constructing the configuration must not throw.
+        // to the host; constructing the configuration must not throw.
         val blankToken = LinkConfiguration("  ", "cid")
         val blankClientId = LinkConfiguration("tok", "   ")
         assertEquals("  ", blankToken.token)

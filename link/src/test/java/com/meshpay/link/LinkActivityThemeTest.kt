@@ -12,7 +12,7 @@ import java.util.Base64
 
 /**
  * The WebView reports `prefers-color-scheme` from the Activity theme (targetSdk 33+), so the
- * theme must match the native one, or Link turns dark on a light device (PRG-2331).
+ * theme must match the native one, or Link turns dark on a light device.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])

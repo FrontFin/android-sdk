@@ -12,7 +12,7 @@ import org.robolectric.annotation.Config
 
 /**
  * Branch coverage for the `intent://` parser and the `window.open` policy beyond
- * the shared N1–N8 vectors (§2.6).
+ * the shared N1–N8 vectors.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
@@ -97,7 +97,7 @@ class NavigationPolicyEdgeTest {
         assertEquals(NavigationDecision.OpenExternal("metamask://wc", null), decision)
     }
 
-    // --- Length bound on URLs handed to the OS (SR-6, PRG-2290) ---------------
+    // --- Length bound on URLs handed to the OS ---------------
 
     /** [prefix] padded with `a` to exactly [length] characters. */
     private fun urlOfLength(

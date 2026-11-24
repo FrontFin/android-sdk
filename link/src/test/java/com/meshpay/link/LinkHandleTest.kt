@@ -10,7 +10,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-/** [LinkHandle.close] delegates to the registered session closer (§2.3). */
+/** [LinkHandle.close] delegates to the registered session closer. */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class LinkHandleTest {

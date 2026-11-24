@@ -24,7 +24,7 @@ import org.robolectric.android.controller.ActivityController
 /**
  * A foreign document in the main frame — e.g. committed by a `target=_top` POST,
  * which never reaches `shouldOverrideUrlLoading` — ends the session and is never
- * shown (PRG-2294).
+ * shown.
  */
 @RunWith(RobolectricTestRunner::class)
 class LinkActivityContainmentTest {
