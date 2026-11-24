@@ -1,9 +1,8 @@
 # CLAUDE.md — Mesh Link Android SDK
 
 Context for working on this repo. The SDK opens the hosted Mesh Link UI in a
-WebView; it is the Android peer of `FrontFin/react-native-sdk`, `FrontFin/ios-sdk`
-and `FrontFin/flutter-sdk`, and shares their public API, Link URL contract and
-bridge protocol. The solution design is the "MFS SDK Solution Design" (Notion).
+WebView; it is the Android peer of the Mesh Link React Native, iOS and Flutter
+SDKs, and shares their public API, Link URL contract and bridge protocol.
 
 ## Layout
 

@@ -7,7 +7,7 @@ import org.json.JSONObject
 /**
  * Messages from Link that the SDK acts on. Link also posts `transferFinished`,
  * `withdrawalRequested` and `brokerageAccountAccessToken`; they are dropped,
- * because their payloads carry user data and broker credentials (§2.5).
+ * because their payloads carry user data and broker credentials.
  */
 internal sealed interface LinkMessage {
     data class Close(val status: LinkExitStatus) : LinkMessage

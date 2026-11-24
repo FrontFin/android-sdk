@@ -57,7 +57,7 @@ private val Background = Color(0xFF0E0D0D)
 private val Surface = Color(0xFF1B1A1A)
 
 /**
- * Pasted-token sample (§2.14). The client secret never lives in the app: mint the
+ * Pasted-token sample. The client secret never lives in the app: mint the
  * session token on a backend or dev machine and paste it here. Dark-mode only,
  * Mesh-yellow accent; the Open button stays disabled until both the client ID and
  * token are non-blank.

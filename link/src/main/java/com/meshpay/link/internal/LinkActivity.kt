@@ -39,7 +39,7 @@ import com.meshpay.link.LinkExitStatus
 import com.meshpay.link.LinkResult
 
 /**
- * Hosts the Link WebView full screen and runs the session lifecycle (§2.3, §5.3).
+ * Hosts the Link WebView full screen and runs the session lifecycle.
  * Not launched directly: [com.meshpay.link.LinkContract] creates its Intent, and
  * the Activity Result API delivers [LinkResult] exactly once.
  */
@@ -76,7 +76,7 @@ internal class LinkActivity : ComponentActivity() {
     private var navigationFailed = false
 
     /**
-     * Set once a foreign document reached the main frame (PRG-2294). From then
+     * Set once a foreign document reached the main frame. From then
      * on nothing that page does — navigations, popups, deep links — leaves the
      * SDK, even at the moment before the WebView is destroyed.
      */
@@ -113,7 +113,7 @@ internal class LinkActivity : ComponentActivity() {
         launcher = ExternalLauncher(this)
 
         // A blank token/clientId is reported as load-error, never thrown to the
-        // host app: the builder throws internally and is caught here (§2.2, §2.3).
+        // host app: the builder throws internally and is caught here.
         built =
             try {
                 buildLinkUrl(config.token, config.clientId, config.options)
@@ -277,7 +277,7 @@ internal class LinkActivity : ComponentActivity() {
     }
 
     /** Fallback bridge for old WebViews. Visible to every frame, so the current
-     *  main-frame URL origin is checked before a message is processed (§5.3, §5.5). */
+     *  main-frame URL origin is checked before a message is processed. */
     private inner class LegacyJsBridge {
         @android.webkit.JavascriptInterface
         fun sendNativeMessage(json: String?) {
@@ -383,7 +383,7 @@ internal class LinkActivity : ComponentActivity() {
                 view: WebView,
                 detail: RenderProcessGoneDetail,
             ): Boolean {
-                // MUST return true; returning false crashes the host app (§2.3).
+                // MUST return true; returning false crashes the host app.
                 // Detach now, destroy after this callback returns.
                 webView = null
                 (view.parent as? android.view.ViewGroup)?.removeView(view)
@@ -442,7 +442,7 @@ internal class LinkActivity : ComponentActivity() {
                             detail: RenderProcessGoneDetail,
                         ): Boolean {
                             // The popup shares Link's renderer; the default `false`
-                            // would crash the host app (§2.3).
+                            // would crash the host app.
                             destroyLater(v)
                             return true
                         }

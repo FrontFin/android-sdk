@@ -1,14 +1,14 @@
 [versions]
 # The published SDK version. `BuildConfig.SDK_VERSION` is generated from this
 # entry and sent to Link as `meshSdkVersion`; it is never hand-written anywhere
-# else. The release workflow reads this same key (§2.11, §2.12).
+# else. The release workflow reads this same key.
 meshpay-link = "1.0.0"
 
 agp = "8.7.3"
 kotlin = "2.0.21"
 
 # Runtime dependencies of the core artifact. androidx.webkit, androidx.activity
-# and androidx.core only — no Compose in `com.meshpay:link` (§5.1).
+# and androidx.core only — no Compose in `com.meshpay:link`.
 androidx-activity = "1.9.3"
 androidx-core = "1.15.0"
 androidx-webkit = "1.12.1"

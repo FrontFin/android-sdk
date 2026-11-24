@@ -5,7 +5,7 @@ import android.os.Looper
 
 /**
  * Bridges [com.meshpay.link.LinkHandle.close] to the running [LinkActivity]. At
- * most one session is active at a time (§2.3), so a single slot is enough.
+ * most one session is active at a time, so a single slot is enough.
  */
 internal object ActiveSession {
     private val mainHandler = Handler(Looper.getMainLooper())

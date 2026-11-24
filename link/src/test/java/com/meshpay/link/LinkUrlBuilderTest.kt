@@ -13,7 +13,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Runs the shared URL vectors U1–U7 (`test-vectors/link-url.json`, §2.4). Tests
+ * Runs the shared URL vectors U1–U7 (`test-vectors/link-url.json`). Tests
  * compare decoded query values, so `+`/`%20` differences never fail a test.
  */
 @RunWith(RobolectricTestRunner::class)

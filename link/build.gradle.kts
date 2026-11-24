@@ -17,7 +17,7 @@ android {
     defaultConfig {
         minSdk = 24
         // The version sent to Link (meshSdkVersion / X-SDK-Version) is generated
-        // from the version catalog, never hand-maintained (§2.12).
+        // from the version catalog, never hand-maintained.
         buildConfigField("String", "SDK_VERSION", "\"${libs.versions.meshpay.link.get()}\"")
         consumerProguardFiles("consumer-rules.pro")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -77,7 +77,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.core)
 }
 
-// --- Coverage (§2.9): lines/functions/statements >= 90 %, branches >= 80 % ---
+// --- Coverage: lines/functions/statements >= 90 %, branches >= 80 % ---
 // Measured over the SDK's own code only; generated and framework-glue classes are
 // excluded so the ratchet reflects logic the tests actually own.
 val coverageExclusions =

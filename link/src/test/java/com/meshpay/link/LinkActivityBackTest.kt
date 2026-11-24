@@ -20,7 +20,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import java.time.Duration
 
-/** The Android back button and gesture: history first, then ask Link to close (PRG-2319). */
+/** The Android back button and gesture: history first, then ask Link to close. */
 @RunWith(RobolectricTestRunner::class)
 class LinkActivityBackTest {
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()

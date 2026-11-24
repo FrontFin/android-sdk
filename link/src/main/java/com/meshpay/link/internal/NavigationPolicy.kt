@@ -40,7 +40,7 @@ private fun isAllowedAboutPage(url: String): Boolean = url.lowercase() in ALLOWE
 private val PLAIN_SCHEME = Regex("^[a-z][a-z0-9+.-]*$", RegexOption.IGNORE_CASE)
 
 /**
- * Longest URL handed to the OS (SR-6, PRG-2290). The URL travels in an Intent
+ * Longest URL handed to the OS. The URL travels in an Intent
  * over Binder, so an unbounded one can fail with TransactionTooLargeException.
  * 32 KiB is far above real wallet deep links (WalletConnect URIs and signed
  * payloads stay in the low kilobytes) and far below the Binder buffer.
@@ -48,7 +48,7 @@ private val PLAIN_SCHEME = Regex("^[a-z][a-z0-9+.-]*$", RegexOption.IGNORE_CASE)
 internal const val MAX_EXTERNAL_URL_LENGTH: Int = 32 * 1024
 
 /**
- * Where a WebView navigation request goes (solution design §2.6, vectors N1–N8).
+ * Where a WebView navigation request goes (vectors N1–N8).
  *
  * - The session's own Link origin loads in the WebView; any other `https` page in
  *   the main frame (OAuth, on-ramp, exchange handoff) opens externally, so
@@ -82,7 +82,7 @@ internal fun decideNavigation(
 
 /**
  * Whether a main-frame document that has already started loading is outside the
- * session's Link origin, so it must not stay in the WebView (PRG-2294).
+ * session's Link origin, so it must not stay in the WebView.
  *
  * Second gate behind [decideNavigation]: Android never calls
  * `shouldOverrideUrlLoading` for POST navigations, so a `target=_top` form (from

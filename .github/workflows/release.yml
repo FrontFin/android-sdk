@@ -3,7 +3,7 @@
 # validate the changelog, run the full CI (ci.yml, called as a reusable workflow),
 # publish to Maven Central, then create the GitHub release (which creates the tag)
 # and report the outcome on Slack. Releasing means running the bump-version skill,
-# opening a PR and merging it (§2.11).
+# opening a PR and merging it.
 name: Release
 
 on:
@@ -186,8 +186,8 @@ jobs:
             --notes-file "$RUNNER_TEMP/release_notes.md" \
             --target "$GITHUB_SHA"
 
-  # Posts the release outcome (success or failure) to Slack via the shared
-  # FrontFin/cicd-templates post-message action (bot-token based). Runs whenever a release
+  # Posts the release outcome (success or failure) to Slack through the
+  # chat.postMessage API (bot-token based). Runs whenever a release
   # was attempted — a new version was detected, or the version/changelog check
   # itself failed — and never on a plain push without a version bump. The
   # audience-var check lives in the Slack-post step so the summary step still runs
@@ -306,13 +306,31 @@ jobs:
         # Self-skips when the audience var is unset (records `skipped` as the
         # outcome, which the summary step below flags). continue-on-error covers
         # the outage / token-fail path so a Slack hiccup can't flip a release red.
+        #
+        # Calls chat.postMessage directly (no third-party action), so the step
+        # works from a public repo. The payload is built with jq so the message
+        # is JSON-escaped; the token goes in a header read from env, never argv.
         if: ${{ always() && vars.RELEASE_SLACK_AUDIENCE != '' }}
         continue-on-error: true
-        uses: FrontFin/cicd-templates/actions/slack/post-message@9726773f3f5b33936db89d2a81d22695b043df97
-        with:
-          token: ${{ secrets.GH_ACTIONS_SLACK_APP_TOKEN }}
-          audience: ${{ vars.RELEASE_SLACK_AUDIENCE }}
-          message: ${{ steps.message.outputs.message }}
+        env:
+          SLACK_TOKEN: ${{ secrets.GH_ACTIONS_SLACK_APP_TOKEN }}
+          CHANNEL: ${{ vars.RELEASE_SLACK_AUDIENCE }}
+          MESSAGE: ${{ steps.message.outputs.message }}
+        run: |
+          if [[ -z "$SLACK_TOKEN" || -z "$MESSAGE" ]]; then
+            echo "::error::Missing Slack token or message."
+            exit 1
+          fi
+          PAYLOAD=$(jq -nc --arg channel "$CHANNEL" --arg text "$MESSAGE" '{channel: $channel, text: $text}')
+          RESPONSE=$(curl -sS --fail-with-body --max-time 30 \
+            -H "Authorization: Bearer ${SLACK_TOKEN}" \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            --data "$PAYLOAD" \
+            https://slack.com/api/chat.postMessage)
+          if [[ "$(jq -r '.ok' <<< "$RESPONSE")" != "true" ]]; then
+            echo "::error::Slack chat.postMessage failed: $(jq -r '.error // "unknown"' <<< "$RESPONSE")"
+            exit 1
+          fi
 
       - name: Record Slack post outcome in the release summary
         # `steps.post.outcome` is `success` (posted), `failure` (Slack outage,

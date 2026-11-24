@@ -20,7 +20,7 @@ import org.robolectric.shadows.ShadowLog
 
 /**
  * A launch failure of any kind is reported as "not opened" and tries the
- * fallback; it never escapes into the WebView callback (SR-6, PRG-2290).
+ * fallback; it never escapes into the WebView callback.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)

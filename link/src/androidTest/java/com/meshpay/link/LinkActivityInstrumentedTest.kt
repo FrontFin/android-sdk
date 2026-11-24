@@ -9,7 +9,7 @@ import org.junit.runner.RunWith
  * Instrumented coverage for the bits that need a real WebView and a real
  * `Looper` — bridge acceptance (wrong origin / subframe rejected, main-frame
  * Link-origin accepted) and lifecycle (exactly one outcome; load timeout,
- * host `close()`, renderer crash) — run on an emulator in CI (§2.9, §5.4).
+ * host `close()`, renderer crash) — run on an emulator in CI.
  *
  * These assertions are intentionally minimal here; the full WebView-driven
  * scenarios load a stub Link page served from the test app's assets so the suite
