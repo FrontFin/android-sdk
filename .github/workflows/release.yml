@@ -309,7 +309,8 @@ jobs:
         #
         # Calls chat.postMessage directly (no third-party action), so the step
         # works from a public repo. The payload is built with jq so the message
-        # is JSON-escaped; the token goes in a header read from env, never argv.
+        # is JSON-escaped. The token never reaches argv: the bash builtin printf
+        # writes the header to a process-substitution fd that curl reads (-H @file).
         if: ${{ always() && vars.RELEASE_SLACK_AUDIENCE != '' }}
         continue-on-error: true
         env:
@@ -323,7 +324,7 @@ jobs:
           fi
           PAYLOAD=$(jq -nc --arg channel "$CHANNEL" --arg text "$MESSAGE" '{channel: $channel, text: $text}')
           RESPONSE=$(curl -sS --fail-with-body --max-time 30 \
-            -H "Authorization: Bearer ${SLACK_TOKEN}" \
+            -H @<(printf 'Authorization: Bearer %s\n' "$SLACK_TOKEN") \
             -H 'Content-Type: application/json; charset=utf-8' \
             --data "$PAYLOAD" \
             https://slack.com/api/chat.postMessage)
