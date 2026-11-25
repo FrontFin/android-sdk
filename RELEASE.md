@@ -34,14 +34,36 @@ On merge, [`release.yml`](.github/workflows/release.yml) does the rest:
 
 ## Secrets and variables
 
-| Name | Kind | Used for |
-| --- | --- | --- |
-| `MAVEN_USERNAME`, `MAVEN_PASSWORD` | secret | Central Portal publishing |
-| `SIGNING_KEY`, `SIGNING_PASSWORD` | secret | In-memory artifact signing |
-| `GH_ACTIONS_SLACK_APP_TOKEN` | secret | Slack bot token for the release post |
+| Name | Kind | Where | Used for |
+| --- | --- | --- | --- |
+| `MAVEN_USERNAME`, `MAVEN_PASSWORD` | secret | `maven-central` environment | Central Portal user token (see below) |
+| `SIGNING_KEY`, `SIGNING_PASSWORD` | secret | `maven-central` environment | In-memory artifact signing |
+| `GH_ACTIONS_SLACK_APP_TOKEN` | secret | repository | Slack bot token for the release post |
 | `RELEASE_SLACK_AUDIENCE` | variable | Where the release post goes; unset = no post (flagged in the run summary) |
 | `RELEASE_SUCCESS_MENTION` | variable | Optional space-separated Slack usergroup IDs (`S…`) pinged on success |
 | `RELEASE_FAILURE_MENTION` | variable | Optional space-separated Slack usergroup IDs (`S…`) pinged on failure |
 
 Maven Central also requires the `com.meshpay` namespace to be verified on the
 Central Portal (a DNS TXT record on `meshpay.com`).
+
+## Maven Central credentials
+
+The Central Portal has no OIDC trusted publishing, so publishing uses a Portal
+user token. Only the `publish` job can read it:
+
+- **`maven-central` environment.** The four publish secrets live only here, not
+  as repository secrets. The environment requires a reviewer's approval
+  (self-review is blocked, so whoever merged the release PR asks another
+  reviewer to approve the `publish` job) and allows deployments from `main`
+  only, so no other branch or job can reach the secrets.
+- **User token, never the account password.** `MAVEN_USERNAME` /
+  `MAVEN_PASSWORD` are the two halves of the Portal user token
+  `android-sdk-release-token`.
+- **Rotation.** The token expires on **2027-02-17**. Before then, generate a
+  new token with an expiry at
+  [central.sonatype.com/usertoken](https://central.sonatype.com/usertoken),
+  replace both secrets in the `maven-central` environment, revoke the old
+  token, and update the token name and date here.
+- **Account.** The `com.meshpay` namespace belongs to a Central Portal account
+  owned by the Product Engineering team. Its login is in 1Password
+  (`PED` vault, `Maven Central` item), and 2FA is enabled.
