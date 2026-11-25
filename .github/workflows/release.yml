@@ -121,6 +121,9 @@ jobs:
     needs: [check-version, ci]
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # The environment's branch policy (main only) and protection rules are set in
+    # repo settings, outside this editable file. Its secrets reach only this job.
+    environment: maven-central
     permissions:
       contents: read
 
