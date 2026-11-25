@@ -116,11 +116,16 @@ jobs:
     uses: ./.github/workflows/ci.yml
 
   # Kept apart from CI so the Maven Central and signing secrets are never held
-  # while the test and lint tasks run.
+  # while the test and lint tasks run. The four secrets live only in the
+  # `maven-central` environment (required reviewers, deployments limited to
+  # main), so no other job or branch can read them. See RELEASE.md.
   publish:
     needs: [check-version, ci]
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    environment:
+      name: maven-central
+      url: https://central.sonatype.com/artifact/${{ env.GROUP_ID }}/${{ env.ARTIFACT_ID }}/${{ needs.check-version.outputs.version }}
     permissions:
       contents: read
 
@@ -138,6 +143,8 @@ jobs:
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       # Central Portal, signed in memory (SIGNING_KEY is an ASCII-armored key).
+      # MAVEN_USERNAME/MAVEN_PASSWORD are a Central Portal user token with an
+      # expiry, never the account password (rotation date in RELEASE.md).
       - name: Publish to Maven Central 🚀
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_USERNAME }}
