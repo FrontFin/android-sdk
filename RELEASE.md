@@ -39,9 +39,9 @@ On merge, [`release.yml`](.github/workflows/release.yml) does the rest:
 | `MAVEN_USERNAME`, `MAVEN_PASSWORD` | secret | `maven-central` environment | Central Portal user token (see below) |
 | `SIGNING_KEY`, `SIGNING_PASSWORD` | secret | `maven-central` environment | In-memory artifact signing |
 | `GH_ACTIONS_SLACK_APP_TOKEN` | secret | repository | Slack bot token for the release post |
-| `RELEASE_SLACK_AUDIENCE` | variable | Where the release post goes; unset = no post (flagged in the run summary) |
-| `RELEASE_SUCCESS_MENTION` | variable | Optional space-separated Slack usergroup IDs (`S…`) pinged on success |
-| `RELEASE_FAILURE_MENTION` | variable | Optional space-separated Slack usergroup IDs (`S…`) pinged on failure |
+| `RELEASE_SLACK_AUDIENCE` | variable | repository | Where the release post goes; unset = no post (flagged in the run summary) |
+| `RELEASE_SUCCESS_MENTION` | variable | repository | Optional space-separated Slack usergroup IDs (`S…`) pinged on success |
+| `RELEASE_FAILURE_MENTION` | variable | repository | Optional space-separated Slack usergroup IDs (`S…`) pinged on failure |
 
 Maven Central also requires the `com.meshpay` namespace to be verified on the
 Central Portal (a DNS TXT record on `meshpay.com`).
