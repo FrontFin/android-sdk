@@ -66,4 +66,4 @@ user token. Only the `publish` job can read it:
   token, and update the token name and date here.
 - **Account.** The `com.meshpay` namespace belongs to a Central Portal account
   owned by the Product Engineering team. Its login is in 1Password
-  (`PED` vault, `Maven Central` item), and 2FA is enabled.
+  (`PED SDK` vault, `Maven Central` item), and 2FA is enabled.
